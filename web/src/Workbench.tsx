@@ -15,6 +15,43 @@ import { useWorkbenchQuery } from "./useWorkbenchQuery";
 
 const PAGE_SIZE = 20;
 
+function ListSkeleton() {
+  return (
+    <table aria-hidden="true">
+      <thead>
+        <tr>
+          <th>Candidate</th>
+          <th>Job</th>
+          <th>Match</th>
+          <th>LLM</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {Array.from({ length: PAGE_SIZE }, (_, index) => (
+          <tr key={index} className="skeleton-row">
+            <td>
+              <span className="skeleton-bar" style={{ width: "80%" }} />
+            </td>
+            <td>
+              <span className="skeleton-bar" style={{ width: "90%" }} />
+            </td>
+            <td>
+              <span className="skeleton-bar" style={{ width: "50%" }} />
+            </td>
+            <td>
+              <span className="skeleton-bar" style={{ width: "50%" }} />
+            </td>
+            <td>
+              <span className="skeleton-bar" style={{ width: "70%" }} />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 export function Workbench() {
   const { query, setQuery } = useWorkbenchQuery();
   const [items, setItems] = useState<ListItem[]>([]);
@@ -44,15 +81,12 @@ export function Workbench() {
       });
       setItems(data.items);
       setTotal(data.total);
-      if (query.id && !data.items.some((item) => item.application_id === query.id)) {
-        // Keep a selection that is off this page; do not clear it.
-      }
     } catch {
       setListError("Could not load applications. Is the API running?");
     } finally {
       setListLoading(false);
     }
-  }, [query.status, query.country, query.jobFamily, query.sort, query.order, query.page, query.id]);
+  }, [query.status, query.country, query.jobFamily, query.sort, query.order, query.page]);
 
   const loadDetail = useCallback(async (id: string) => {
     setDetailLoading(true);
@@ -149,60 +183,62 @@ export function Workbench() {
 
       <div className="workbench">
         <section className="list-pane">
-          {listLoading ? <p className="muted">Loading applications…</p> : null}
-          {listError ? (
-            <div>
-              <p className="error">{listError}</p>
-              <button type="button" onClick={() => void loadList()}>
-                Retry
-              </button>
-            </div>
-          ) : null}
-          {!listLoading && !listError && items.length === 0 ? (
-            <p className="empty">
-              {query.sort === "score_disagreement"
-                ? "No LLM scores stored yet. Open an application and score it first."
-                : "No applications match these filters."}
-            </p>
-          ) : null}
-          {!listLoading && !listError && items.length > 0 ? (
-            <table>
-              <thead>
-                <tr>
-                  <th>Candidate</th>
-                  <th>Job</th>
-                  <th>Match</th>
-                  <th>LLM</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr
-                    key={item.application_id}
-                    className={item.application_id === selectedId ? "selected" : undefined}
-                    onClick={() => setQuery({ id: item.application_id })}
-                  >
-                    <td>
-                      <strong>{item.candidate.full_name}</strong>
-                      <div className="tiny muted">{item.application_id}</div>
-                    </td>
-                    <td>
-                      {item.job.title}
-                      <div className="tiny muted">
-                        {item.job.city}, {item.job.country} · {item.job.job_family}
-                      </div>
-                    </td>
-                    <td>{Math.round(item.match_score * 100)}</td>
-                    <td>{item.llm_score ?? "—"}</td>
-                    <td>
-                      <StatusBadge status={item.status} />
-                    </td>
+          <div className="list-body">
+            {listLoading ? <ListSkeleton /> : null}
+            {listError ? (
+              <div>
+                <p className="error">{listError}</p>
+                <button type="button" onClick={() => void loadList()}>
+                  Retry
+                </button>
+              </div>
+            ) : null}
+            {!listLoading && !listError && items.length === 0 ? (
+              <p className="empty">
+                {query.sort === "score_disagreement"
+                  ? "No LLM scores stored yet. Open an application and score it first."
+                  : "No applications match these filters."}
+              </p>
+            ) : null}
+            {!listLoading && !listError && items.length > 0 ? (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Candidate</th>
+                    <th>Job</th>
+                    <th>Match</th>
+                    <th>LLM</th>
+                    <th>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : null}
+                </thead>
+                <tbody>
+                  {items.map((item) => (
+                    <tr
+                      key={item.application_id}
+                      className={item.application_id === selectedId ? "selected" : undefined}
+                      onClick={() => setQuery({ id: item.application_id })}
+                    >
+                      <td>
+                        <strong>{item.candidate.full_name}</strong>
+                        <div className="tiny muted">{item.application_id}</div>
+                      </td>
+                      <td>
+                        {item.job.title}
+                        <div className="tiny muted">
+                          {item.job.city}, {item.job.country} · {item.job.job_family}
+                        </div>
+                      </td>
+                      <td>{Math.round(item.match_score * 100)}</td>
+                      <td>{item.llm_score ?? "—"}</td>
+                      <td>
+                        <StatusBadge status={item.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
+          </div>
 
           <div className="pager">
             <button

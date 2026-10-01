@@ -1,3 +1,8 @@
+html {
+  scrollbar-gutter: stable;
+  overflow-y: scroll;
+}
+
 :root {
   color-scheme: light;
   --bg: #f4f1ea;
@@ -115,6 +120,30 @@ textarea {
   min-height: 28rem;
 }
 
+.list-pane {
+  display: flex;
+  flex-direction: column;
+  height: 40rem;
+}
+
+.list-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.skeleton-row td {
+  height: 2.85rem;
+}
+
+.skeleton-bar {
+  display: block;
+  height: 0.7rem;
+  border-radius: 3px;
+  background: var(--line);
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -145,6 +174,13 @@ tbody tr.selected {
   justify-content: space-between;
   align-items: center;
   margin-top: 0.85rem;
+}
+
+.panel {
+  height: 40rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  align-self: start;
 }
 
 .panel-header {
@@ -239,5 +275,15 @@ tbody tr.selected {
   .scores,
   .facts {
     grid-template-columns: 1fr;
+  }
+
+  .list-pane,
+  .panel {
+    height: auto;
+    min-height: 24rem;
+  }
+
+  .list-body {
+    max-height: 32rem;
   }
 }
