@@ -1,71 +1,33 @@
 import { Router } from "express";
+import { asyncHandler, badRequest, notFound } from "../http/asyncHandler.js";
+import { parseListQuery } from "../http/listQuery.js";
 import { JobsService } from "../services/jobs.js";
-import { isJobSortField, type JobListQuery } from "../types.js";
+import { JOB_SORT_FIELDS } from "../types.js";
 
 export function jobsRouter(service: JobsService): Router {
   const router = Router();
 
-  router.get("/", async (req, res, next) => {
-    try {
-      const country = optionalString(req.query.country);
-      const jobFamily = optionalString(req.query.jobFamily);
-      const search = optionalString(req.query.search);
-      const sortRaw = optionalString(req.query.sort) ?? "created_at";
-      const orderRaw = optionalString(req.query.order) ?? "desc";
-      const page = Number(req.query.page ?? 1);
-      const pageSize = Number(req.query.pageSize ?? 20);
+  router.get(
+    "/",
+    asyncHandler(async (req, res) => {
+      const parsed = parseListQuery(req.query, JOB_SORT_FIELDS, "created_at");
+      if (!parsed.ok) {
+        return badRequest(res, parsed.error);
+      }
+      res.json(await service.list(parsed.value));
+    }),
+  );
 
-      if (!isJobSortField(sortRaw)) {
-        res.status(400).json({ error: "invalid_sort" });
-        return;
-      }
-      if (orderRaw !== "asc" && orderRaw !== "desc") {
-        res.status(400).json({ error: "invalid_order" });
-        return;
-      }
-      if (!Number.isInteger(page) || page < 1) {
-        res.status(400).json({ error: "invalid_page" });
-        return;
-      }
-      if (!Number.isInteger(pageSize) || pageSize < 1) {
-        res.status(400).json({ error: "invalid_page_size" });
-        return;
-      }
-
-      const query: JobListQuery = {
-        country,
-        jobFamily,
-        search,
-        sort: sortRaw,
-        order: orderRaw,
-        page,
-        pageSize: Math.min(pageSize, 100),
-      };
-      res.json(await service.list(query));
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  router.get("/:id", async (req, res, next) => {
-    try {
+  router.get(
+    "/:id",
+    asyncHandler(async (req, res) => {
       const job = await service.getById(req.params.id);
       if (!job) {
-        res.status(404).json({ error: "not_found" });
-        return;
+        return notFound(res);
       }
       res.json(job);
-    } catch (error) {
-      next(error);
-    }
-  });
+    }),
+  );
 
   return router;
-}
-
-function optionalString(value: unknown): string | undefined {
-  if (typeof value !== "string" || value.trim() === "") {
-    return undefined;
-  }
-  return value;
 }

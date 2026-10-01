@@ -1,9 +1,11 @@
-import type { ApplicationDetail, Status } from "./api";
-import { STATUSES } from "./api";
+import type { Application, Status } from "../domain";
+import { STATUSES, STATUS_LABELS } from "../domain";
+import { toPercent } from "../format";
+import { ErrorState } from "./ErrorState";
 import { StatusBadge } from "./StatusBadge";
 
 type Props = {
-  detail: ApplicationDetail | null;
+  detail: Application | null;
   loading: boolean;
   error: string | null;
   llmError: string | null;
@@ -12,10 +14,6 @@ type Props = {
   onStatusChange: (status: Status, note?: string) => void;
   onScore: () => void;
 };
-
-function rulePercent(score: number): number {
-  return Math.round(score * 100);
-}
 
 export function ApplicationDetailPanel({
   detail,
@@ -37,10 +35,7 @@ export function ApplicationDetailPanel({
   if (error) {
     return (
       <aside className="panel">
-        <p className="error">{error}</p>
-        <button type="button" onClick={onRetry}>
-          Retry
-        </button>
+        <ErrorState message={error} onRetry={onRetry} />
       </aside>
     );
   }
@@ -68,52 +63,41 @@ export function ApplicationDetailPanel({
         <h3>Job</h3>
         <p className="job-title">{detail.job.title}</p>
         <dl className="facts">
-          <div>
-            <dt>Family</dt>
-            <dd>{detail.job.job_family}</dd>
-          </div>
-          <div>
-            <dt>Seniority</dt>
-            <dd>{detail.job.seniority}</dd>
-          </div>
-          <div>
-            <dt>Location</dt>
-            <dd>
-              {detail.job.city}, {detail.job.country}
-            </dd>
-          </div>
-          <div>
-            <dt>Source</dt>
-            <dd>{detail.source}</dd>
-          </div>
+          <Fact label="Family" value={detail.job.job_family} />
+          <Fact label="Seniority" value={detail.job.seniority} />
+          <Fact
+            label="Location"
+            value={`${detail.job.city}, ${detail.job.country}`}
+          />
+          <Fact label="Source" value={detail.source} />
         </dl>
       </section>
 
       <section>
         <h3>Candidate</h3>
         <dl className="facts">
-          <div>
-            <dt>Experience</dt>
-            <dd>{detail.candidate.years_experience} years</dd>
-          </div>
-          <div>
-            <dt>Prefers</dt>
-            <dd>{detail.candidate.preferred_job_family}</dd>
-          </div>
-          <div>
-            <dt>Based in</dt>
-            <dd>
-              {detail.candidate.city}, {detail.candidate.country}
-            </dd>
-          </div>
+          <Fact
+            label="Experience"
+            value={`${detail.candidate.years_experience} years`}
+          />
+          <Fact
+            label="Prefers"
+            value={detail.candidate.preferred_job_family}
+          />
+          <Fact
+            label="Based in"
+            value={`${detail.candidate.city}, ${detail.candidate.country}`}
+          />
         </dl>
       </section>
 
       <section className="scores">
         <div className="score-card">
           <p className="eyebrow">Rule-based</p>
-          <p className="score-value">{rulePercent(detail.match_score)}</p>
-          <p className="muted">{detail.match_band} band · 0–100 scale</p>
+          <p className="score-value">{toPercent(detail.match_score)}</p>
+          <p className="muted">
+            {detail.match_band} band · 0–100 scale
+          </p>
         </div>
         <div className="score-card">
           <p className="eyebrow">LLM</p>
@@ -144,26 +128,52 @@ export function ApplicationDetailPanel({
           >
             {STATUSES.map((status) => (
               <option key={status} value={status}>
-                {status.replace("_", " ")}
+                {STATUS_LABELS[status]}
               </option>
             ))}
           </select>
         </div>
-        <label className="note-label">
-          Note (optional)
-          <textarea
-            key={detail.application_id + (detail.recruiter_note ?? "")}
-            defaultValue={detail.recruiter_note ?? ""}
-            rows={3}
-            onBlur={(event) => {
-              const value = event.target.value.trim();
-              if (value !== (detail.recruiter_note ?? "")) {
-                onStatusChange(detail.status, value);
-              }
-            }}
-          />
-        </label>
+        <NoteField detail={detail} onSave={onStatusChange} />
       </section>
     </aside>
+  );
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
+}
+
+/**
+ * Keeps a draft note and saves it with the current status on blur. Remounting via
+ * `key` when the stored note changes picks up a note saved elsewhere.
+ */
+function NoteField({
+  detail,
+  onSave,
+}: {
+  detail: Application;
+  onSave: (status: Status, note?: string) => void;
+}) {
+  const stored = detail.recruiter_note ?? "";
+  return (
+    <label className="note-label">
+      Note (optional)
+      <textarea
+        key={detail.application_id + stored}
+        defaultValue={stored}
+        rows={3}
+        onBlur={(event) => {
+          const value = event.target.value.trim();
+          if (value !== stored) {
+            onSave(detail.status, value);
+          }
+        }}
+      />
+    </label>
   );
 }

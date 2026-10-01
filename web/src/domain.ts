@@ -1,5 +1,3 @@
-import type { ParsedListQuery } from "./http/listQuery.js";
-
 export const STATUSES = [
   "new",
   "in_review",
@@ -10,20 +8,26 @@ export const STATUSES = [
 
 export type Status = (typeof STATUSES)[number];
 
-export const APPLICATION_SORT_FIELDS = [
-  "match_score",
-  "created_at",
-  "score_disagreement",
+export const STATUS_LABELS: Record<Status, string> = {
+  new: "New",
+  in_review: "In review",
+  shortlisted: "Shortlisted",
+  rejected: "Rejected",
+  hired: "Hired",
+};
+
+export const JOB_FAMILIES = [
+  "Logistics",
+  "Manufacturing",
+  "Healthcare",
+  "Office & Admin",
+  "IT",
 ] as const;
 
-export const JOB_SORT_FIELDS = [
-  "created_at",
-  "title",
-  "application_count",
+export const COUNTRIES = [
+  { code: "DE", name: "Germany" },
+  { code: "AT", name: "Austria" },
 ] as const;
-
-export type ApplicationSortField = (typeof APPLICATION_SORT_FIELDS)[number];
-export type JobSortField = (typeof JOB_SORT_FIELDS)[number];
 
 export type Job = {
   job_id: string;
@@ -57,7 +61,7 @@ export type JobWithCounts = Job & {
 
 /**
  * One application with its job and candidate. The list and the detail endpoint
- * return the same shape, so the UI has a single type to render.
+ * return this same shape, so the UI renders one type everywhere.
  */
 export type Application = {
   application_id: string;
@@ -75,21 +79,3 @@ export type Application = {
   job: Job;
   candidate: Candidate;
 };
-
-export type LlmScore = {
-  score: number;
-  reason: string;
-};
-
-/** Server-side only. Implementations live in services/llm. */
-export type MatchScorer = {
-  model: string;
-  score(input: { job: Job; candidate: Candidate }): Promise<LlmScore>;
-};
-
-export type ListQuery = ParsedListQuery<ApplicationSortField>;
-export type JobListQuery = ParsedListQuery<JobSortField>;
-
-export function isStatus(value: string): value is Status {
-  return (STATUSES as readonly string[]).includes(value);
-}

@@ -29,12 +29,25 @@ web (React + Vite)  →  Express API  →  PostgreSQL
                               ↘ MatchScorer (mock | Anthropic Haiku)
 ```
 
+Each layer only does one job:
+
+- **`server/src/db`** — connection pool, schema reset, CSV seed.
+- **`server/src/http`** — request concerns shared by every route: query-string parsing and validation, async error forwarding, `400`/`404` bodies.
+- **`server/src/routes`** — HTTP only. Validate input, call the service, map the result to a status code. No SQL.
+- **`server/src/services`** — business logic and SQL. This is the only layer that touches the database.
+- **`server/src/services/llm`** — the `MatchScorer` interface plus its mock and Anthropic implementations, and the one validator for a model score.
+- **`web/src/domain.ts`** — types and vocabulary (`Status`, `Job`, `Application`) shared by the UI.
+- **`web/src/api.ts`** — transport only.
+- **`web/src/pages`, `web/src/components`** — UI.
+
+### Behaviour worth knowing
+
 - **The recruiter lands on the job list** (`/`), not on a flat application list. Each row shows the job plus how many applicants it has, broken down by status. Picking a job opens its candidates.
 - **The candidate list is always scoped to one job** (`/job/:jobId`). The job title, location, family, and seniority head the page; a "← All jobs" link goes back.
-- **Filters, sort, and pagination run in SQL**, not in the browser. The job list filters on country, job family, and a title/city search. The candidate list filters on application status.
+- **Filters, sort, and pagination run in SQL**, not in the browser. The job list filters on country, job family, and a title/city search. The candidate list filters on application status. Both reset to page 1 when a filter changes, so you never land on an out-of-range page.
 - Default candidate sort is match score high → low.
 - Detail is a **side panel**. Changing status updates the selected row without losing list position (optimistic update, rollback on failure).
-- Routes and filters live in the URL, so a job's candidate list can be reloaded or shared.
+- Routes, filters, and pagination live in the URL, so a job's candidate list can be reloaded or shared.
 - `POST /applications/:id/llm-score` scores **on demand**. The result is stored on the application. Opening the same application again, or posting again, does **not** call the model a second time.
 - `LLM_MODE=mock` (default) uses a deterministic stub. Set `LLM_MODE=live` and `ANTHROPIC_API_KEY` to call **Claude Haiku 4.5** (`claude-haiku-4-5`): cheap enough for a handful of scores. Structured output is forced with a JSON tool schema (`score` 0–100 + `reason`), then validated again in our code. The key stays on the server.
 
@@ -48,8 +61,10 @@ If a live call fails or returns invalid JSON, the API responds `502` with `{ "er
 | GET    | `/jobs/:id`                   | Job + applicant counts by status                                                                                                    |
 | GET    | `/applications`               | Query: `jobId`, `status`, `country`, `jobFamily`, `sort` (`match_score` \| `created_at` \| `score_disagreement`), `order`, `page`, `pageSize` |
 | GET    | `/applications/:id`           | Application + candidate + job                                                                                                        |
-| PATCH  | `/applications/:id`           | `{ "status": "shortlisted", "note": "optional" }`                                                                                    |
+| PATCH  | `/applications/:id`           | `{ "status": "shortlisted", "note": "optional" }` — `status` is required, `note` is not                                                                                           |
 | POST   | `/applications/:id/llm-score` | Cached after first success                                                                                                           |
+
+The list and detail endpoints return the **same** application shape, so the UI has one type to render. Filtering, sorting, and paging all happen in SQL.
 
 `score_disagreement` only includes applications that already have an LLM score, ordered by `abs(llm_score - match_score * 100)`.
 
@@ -59,19 +74,21 @@ If a live call fails or returns invalid JSON, the API responds `502` with `{ "er
 npm test
 ```
 
-Needs Compose Postgres up (uses database `shortlist_test` on port 5433). Covers list filtering/pagination, per-job scoping, job counts, status updates, LLM cache, and invalid LLM payloads.
+Needs Compose Postgres up (uses database `shortlist_test` on port 5433). Covers list filtering, sorting, pagination and per-job scoping; parameter validation; status updates (including note preservation); the LLM cache, its invalid-payload guard and the disagreement sort; and the jobs list with its counts.
 
 ## Assumptions
 
-- List `country` / `jobFamily` refer to the job, not the candidate.
+- List `country` / `jobFamily` on `/applications` refer to the job, not the candidate. The candidate list is scoped to one job, so the UI only exposes the status filter; both filters are still available to any other API client.
 - Any status change (including back to `new`) sets `status_updated_at`.
+- A PATCH without `status` is a `400`, even if it only wants to set a note.
 - Seed is wipe-and-reload, not incremental.
-- The web route for one job is `/job/:jobId` (singular). `/jobs` is the API prefix the dev proxy forwards, so a `/jobs/...` page path would return JSON instead of the app.
+- The web route for one job is `/job/:jobId` (singular). `/jobs` is the API prefix the dev proxy forwards, so a `/jobs/...` page path returns JSON instead of the app.
+- `LLM_MODE` is validated at boot; a typo fails fast instead of silently using the mock.
 
 ## Deliberately left out
 
-Auth, deployment, mobile layout, free-text search, counts-per-status, keyboard shortcuts, Dockerizing the Node processes.
+Auth, deployment, mobile layout, keyboard shortcuts, and Dockerizing the Node processes. Search covers job title and city only — not candidate name — and there is no dedicated summary endpoint; per-status counts ride along on each job row instead.
 
 ## Next with more time
 
-A summary endpoint, inline status change from the list, and a small “where scores disagree” dashboard. Live LLM could stream a reason while the rule-based score stays visible.
+Free-text search over candidate name, inline status change from the list (so a recruiter can triage without opening the panel), and keyboard-driven status changes. Live LLM scoring could stream a reason while the rule-based score stays visible.

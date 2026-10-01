@@ -3,6 +3,4 @@ import { config } from "../config.js";
 
 const { Pool } = pg;
 
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL ?? config.databaseUrl,
-});
+export const pool = new Pool({ connectionString: config.databaseUrl });

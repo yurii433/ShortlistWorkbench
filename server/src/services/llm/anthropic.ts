@@ -1,28 +1,28 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Candidate, Job, LlmScore, MatchScorer } from "../../types.js";
+import { LLM_SCORE_MAX, LLM_SCORE_MIN, parseLlmScore } from "./parse.js";
 
 export const ANTHROPIC_MODEL = "claude-haiku-4-5";
 
-export function parseScore(payload: unknown): LlmScore {
-  if (!payload || typeof payload !== "object") {
-    throw new Error("LLM returned non-object JSON");
-  }
-  const data = payload as { score?: unknown; reason?: unknown };
-  const score = data.score;
-  const reason = data.reason;
-  if (
-    typeof score !== "number" ||
-    !Number.isInteger(score) ||
-    score < 0 ||
-    score > 100
-  ) {
-    throw new Error("LLM score is not an integer 0–100");
-  }
-  if (typeof reason !== "string" || reason.trim() === "") {
-    throw new Error("LLM reason is missing");
-  }
-  return { score, reason: reason.trim() };
-}
+/** Forces structured output: the model must answer through this tool. */
+const SCORE_TOOL: Anthropic.Tool = {
+  name: "record_score",
+  description: "Store the structured fit score",
+  input_schema: {
+    type: "object",
+    properties: {
+      score: {
+        type: "integer",
+        minimum: LLM_SCORE_MIN,
+        maximum: LLM_SCORE_MAX,
+        description: `Fit score from ${LLM_SCORE_MIN} to ${LLM_SCORE_MAX}`,
+      },
+      reason: { type: "string", description: "One sentence" },
+    },
+    required: ["score", "reason"],
+    additionalProperties: false,
+  },
+};
 
 export class AnthropicMatchScorer implements MatchScorer {
   readonly model = ANTHROPIC_MODEL;
@@ -47,33 +47,14 @@ export class AnthropicMatchScorer implements MatchScorer {
             "Score the fit as an integer 0–100 and one sentence.",
         },
       ],
-      tools: [
-        {
-          name: "record_score",
-          description: "Store the structured fit score",
-          input_schema: {
-            type: "object",
-            properties: {
-              score: {
-                type: "integer",
-                minimum: 0,
-                maximum: 100,
-                description: "Fit score from 0 to 100",
-              },
-              reason: { type: "string", description: "One sentence" },
-            },
-            required: ["score", "reason"],
-            additionalProperties: false,
-          },
-        },
-      ],
-      tool_choice: { type: "tool", name: "record_score" },
+      tools: [SCORE_TOOL],
+      tool_choice: { type: "tool", name: SCORE_TOOL.name },
     });
 
     const block = response.content.find((item) => item.type === "tool_use");
     if (!block || block.type !== "tool_use") {
       throw new Error("LLM response had no structured score");
     }
-    return parseScore(block.input);
+    return parseLlmScore(block.input);
   }
 }
