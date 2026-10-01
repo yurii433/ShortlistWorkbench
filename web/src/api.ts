@@ -53,10 +53,43 @@ export type ListResponse = {
   total: number;
 };
 
+export type JobListItem = {
+  job_id: string;
+  title: string;
+  job_family: string;
+  seniority: string;
+  country: string;
+  city: string;
+  created_at: string;
+  application_count: number;
+  new_count: number;
+  in_review_count: number;
+  shortlisted_count: number;
+  hired_count: number;
+};
+
+export type JobListResponse = {
+  items: JobListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
+export type JobListParams = {
+  country: string;
+  jobFamily: string;
+  search: string;
+  sort: string;
+  order: string;
+  page: number;
+  pageSize: number;
+};
+
 export type ListParams = {
   status: string;
   country: string;
   jobFamily: string;
+  jobId: string;
   sort: string;
   order: string;
   page: number;
@@ -75,11 +108,28 @@ async function parseJson<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export function fetchJobs(params: JobListParams): Promise<JobListResponse> {
+  const query = new URLSearchParams();
+  if (params.country) query.set("country", params.country);
+  if (params.jobFamily) query.set("jobFamily", params.jobFamily);
+  if (params.search) query.set("search", params.search);
+  query.set("sort", params.sort);
+  query.set("order", params.order);
+  query.set("page", String(params.page));
+  query.set("pageSize", String(params.pageSize));
+  return fetch(`/jobs?${query}`).then((res) => parseJson<JobListResponse>(res));
+}
+
+export function fetchJob(id: string): Promise<JobListItem> {
+  return fetch(`/jobs/${id}`).then((res) => parseJson<JobListItem>(res));
+}
+
 export function fetchApplications(params: ListParams): Promise<ListResponse> {
   const query = new URLSearchParams();
   if (params.status) query.set("status", params.status);
   if (params.country) query.set("country", params.country);
   if (params.jobFamily) query.set("jobFamily", params.jobFamily);
+  if (params.jobId) query.set("jobId", params.jobId);
   query.set("sort", params.sort);
   query.set("order", params.order);
   query.set("page", String(params.page));

@@ -10,6 +10,7 @@ export function applicationsRouter(service: ApplicationsService): Router {
       const status = optionalString(req.query.status);
       const country = optionalString(req.query.country);
       const jobFamily = optionalString(req.query.jobFamily);
+      const jobId = optionalString(req.query.jobId);
       const sortRaw = optionalString(req.query.sort) ?? "match_score";
       const orderRaw = optionalString(req.query.order) ?? "desc";
       const page = Number(req.query.page ?? 1);
@@ -41,6 +42,7 @@ export function applicationsRouter(service: ApplicationsService): Router {
         status,
         country,
         jobFamily,
+        jobId,
         sort: sortRaw,
         order: orderRaw,
         page,

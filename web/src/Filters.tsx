@@ -1,14 +1,6 @@
 import { STATUSES } from "./api";
 import type { WorkbenchQuery } from "./useWorkbenchQuery";
 
-const FAMILIES = [
-  "Logistics",
-  "Manufacturing",
-  "Healthcare",
-  "Office & Admin",
-  "IT",
-];
-
 type Props = {
   query: WorkbenchQuery;
   onChange: (patch: Partial<WorkbenchQuery>) => void;
@@ -16,7 +8,7 @@ type Props = {
 
 export function Filters({ query, onChange }: Props) {
   return (
-    <div className="filters">
+    <div className="filters filters-candidates">
       <label>
         Status
         <select
@@ -27,31 +19,6 @@ export function Filters({ query, onChange }: Props) {
           {STATUSES.map((status) => (
             <option key={status} value={status}>
               {status.replace("_", " ")}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Country
-        <select
-          value={query.country}
-          onChange={(event) => onChange({ country: event.target.value, page: 1 })}
-        >
-          <option value="">All</option>
-          <option value="DE">Germany</option>
-          <option value="AT">Austria</option>
-        </select>
-      </label>
-      <label>
-        Job family
-        <select
-          value={query.jobFamily}
-          onChange={(event) => onChange({ jobFamily: event.target.value, page: 1 })}
-        >
-          <option value="">All</option>
-          {FAMILIES.map((family) => (
-            <option key={family} value={family}>
-              {family}
             </option>
           ))}
         </select>

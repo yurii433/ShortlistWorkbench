@@ -1,6 +1,6 @@
 # Shortlist Workbench
 
-Internal recruiter tool for staffing applications in Germany and Austria: filter a worklist, open one application, change its status, and request a second match score from an LLM on demand.
+Internal recruiter tool for staffing applications in Germany and Austria: pick an open job, work through the candidates who applied to it, change a status, and request a second match score from an LLM on demand.
 
 ## How to run from a clean checkout
 
@@ -18,9 +18,9 @@ npm run dev
 - UI: http://localhost:5173
 - Postgres: localhost:5433 (user/password/db `shortlist`)
 
-`db:reset` drops the schema, recreates it, and loads `Task/data/*.csv` (40 jobs, 400 candidates, 900 applications). Run it whenever you want a clean database. Recruiter notes and LLM scores are wiped on reset.
+`db:reset` drops the schema, recreates it, and loads `csv_data/*.csv` (40 jobs, 400 candidates, 900 applications). Run it whenever you want a clean database. Recruiter notes and LLM scores are wiped on reset.
 
-The Vite dev server proxies `/applications` to the API, so the browser never talks to Postgres or holds an API key.
+The Vite dev server proxies `/applications` and `/jobs` to the API, so the browser never talks to Postgres or holds an API key.
 
 ## How the pieces fit
 
@@ -29,10 +29,12 @@ web (React + Vite)  →  Express API  →  PostgreSQL
                               ↘ MatchScorer (mock | Anthropic Haiku)
 ```
 
-- **Filters, sort, and pagination run in SQL**, not in the browser. Country and job family filter the **job**.
-- Default list sort is match score high → low.
+- **The recruiter lands on the job list** (`/`), not on a flat application list. Each row shows the job plus how many applicants it has, broken down by status. Picking a job opens its candidates.
+- **The candidate list is always scoped to one job** (`/job/:jobId`). The job title, location, family, and seniority head the page; a "← All jobs" link goes back.
+- **Filters, sort, and pagination run in SQL**, not in the browser. The job list filters on country, job family, and a title/city search. The candidate list filters on application status.
+- Default candidate sort is match score high → low.
 - Detail is a **side panel**. Changing status updates the selected row without losing list position (optimistic update, rollback on failure).
-- Filters, sort, page, and selected `id` live in the URL so a view can be reloaded or shared.
+- Routes and filters live in the URL, so a job's candidate list can be reloaded or shared.
 - `POST /applications/:id/llm-score` scores **on demand**. The result is stored on the application. Opening the same application again, or posting again, does **not** call the model a second time.
 - `LLM_MODE=mock` (default) uses a deterministic stub. Set `LLM_MODE=live` and `ANTHROPIC_API_KEY` to call **Claude Haiku 4.5** (`claude-haiku-4-5`): cheap enough for a handful of scores. Structured output is forced with a JSON tool schema (`score` 0–100 + `reason`), then validated again in our code. The key stays on the server.
 
@@ -42,7 +44,9 @@ If a live call fails or returns invalid JSON, the API responds `502` with `{ "er
 
 | Method | Path                          | Notes                                                                                                                                |
 | ------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| GET    | `/applications`               | Query: `status`, `country`, `jobFamily`, `sort` (`match_score` \| `created_at` \| `score_disagreement`), `order`, `page`, `pageSize` |
+| GET    | `/jobs`                       | Query: `country`, `jobFamily`, `search` (title or city), `sort` (`created_at` \| `title` \| `application_count`), `order`, `page`, `pageSize` |
+| GET    | `/jobs/:id`                   | Job + applicant counts by status                                                                                                    |
+| GET    | `/applications`               | Query: `jobId`, `status`, `country`, `jobFamily`, `sort` (`match_score` \| `created_at` \| `score_disagreement`), `order`, `page`, `pageSize` |
 | GET    | `/applications/:id`           | Application + candidate + job                                                                                                        |
 | PATCH  | `/applications/:id`           | `{ "status": "shortlisted", "note": "optional" }`                                                                                    |
 | POST   | `/applications/:id/llm-score` | Cached after first success                                                                                                           |
@@ -55,13 +59,14 @@ If a live call fails or returns invalid JSON, the API responds `502` with `{ "er
 npm test
 ```
 
-Needs Compose Postgres up (uses database `shortlist_test` on port 5433). Covers list filtering/pagination, status updates, LLM cache, and invalid LLM payloads.
+Needs Compose Postgres up (uses database `shortlist_test` on port 5433). Covers list filtering/pagination, per-job scoping, job counts, status updates, LLM cache, and invalid LLM payloads.
 
 ## Assumptions
 
 - List `country` / `jobFamily` refer to the job, not the candidate.
 - Any status change (including back to `new`) sets `status_updated_at`.
 - Seed is wipe-and-reload, not incremental.
+- The web route for one job is `/job/:jobId` (singular). `/jobs` is the API prefix the dev proxy forwards, so a `/jobs/...` page path would return JSON instead of the app.
 
 ## Deliberately left out
 

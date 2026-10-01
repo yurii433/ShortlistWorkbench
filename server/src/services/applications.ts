@@ -57,6 +57,10 @@ export class ApplicationsService {
       values.push(query.jobFamily);
       filters.push(`j.job_family = $${values.length}`);
     }
+    if (query.jobId) {
+      values.push(query.jobId);
+      filters.push(`a.job_id = $${values.length}`);
+    }
     if (query.hasLlmScore || query.sort === "score_disagreement") {
       filters.push("a.llm_score IS NOT NULL");
     }

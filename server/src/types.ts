@@ -50,12 +50,31 @@ export type ListQuery = {
   status?: string;
   country?: string;
   jobFamily?: string;
+  jobId?: string;
   sort: SortField;
   order: "asc" | "desc";
   page: number;
   pageSize: number;
   hasLlmScore?: boolean;
 };
+
+export const JOB_SORT_FIELDS = ["created_at", "title", "application_count"] as const;
+
+export type JobSortField = (typeof JOB_SORT_FIELDS)[number];
+
+export type JobListQuery = {
+  country?: string;
+  jobFamily?: string;
+  search?: string;
+  sort: JobSortField;
+  order: "asc" | "desc";
+  page: number;
+  pageSize: number;
+};
+
+export function isJobSortField(value: string): value is JobSortField {
+  return (JOB_SORT_FIELDS as readonly string[]).includes(value);
+}
 
 export function isStatus(value: string): value is Status {
   return (STATUSES as readonly string[]).includes(value);
