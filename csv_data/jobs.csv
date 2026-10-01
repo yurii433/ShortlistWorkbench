@@ -1,0 +1,41 @@
+job_id,title,job_family,seniority,country,city,created_at
+J001,Shift Supervisor,Logistics,junior,AT,Salzburg,2025-09-30 09:00
+J002,Care Assistant,Healthcare,mid,DE,Cologne,2025-11-28 09:00
+J003,Executive Assistant,Office & Admin,junior,DE,Cologne,2025-09-17 09:00
+J004,Care Assistant,Healthcare,mid,AT,Innsbruck,2026-01-14 09:00
+J005,Warehouse Associate,Logistics,senior,DE,Hamburg,2026-02-14 09:00
+J006,Warehouse Associate,Logistics,junior,DE,Hamburg,2025-10-01 09:00
+J007,Backend Developer,IT,mid,DE,Frankfurt,2025-09-10 09:00
+J008,Shift Supervisor,Logistics,mid,AT,Salzburg,2025-12-14 09:00
+J009,IT Support Specialist,IT,mid,DE,Leipzig,2025-10-01 09:00
+J010,Frontend Developer,IT,senior,AT,Vienna,2025-11-13 09:00
+J011,Care Assistant,Healthcare,junior,DE,Leipzig,2025-09-17 09:00
+J012,Customer Service Agent,Office & Admin,senior,DE,Frankfurt,2026-02-15 09:00
+J013,Physiotherapist,Healthcare,mid,DE,Munich,2026-01-12 09:00
+J014,IT Support Specialist,IT,mid,AT,Linz,2025-10-14 09:00
+J015,IT Support Specialist,IT,junior,AT,Salzburg,2025-11-30 09:00
+J016,Logistics Coordinator,Logistics,mid,DE,Munich,2026-02-18 09:00
+J017,Physiotherapist,Healthcare,junior,DE,Leipzig,2025-10-15 09:00
+J018,Warehouse Associate,Logistics,mid,DE,Munich,2026-01-05 09:00
+J019,IT Support Specialist,IT,senior,DE,Munich,2025-11-15 09:00
+J020,Backend Developer,IT,junior,DE,Cologne,2026-02-14 09:00
+J021,Payroll Clerk,Office & Admin,mid,AT,Salzburg,2025-10-14 09:00
+J022,Logistics Coordinator,Logistics,mid,DE,Hamburg,2025-11-11 09:00
+J023,Maintenance Technician,Manufacturing,senior,AT,Vienna,2025-12-09 09:00
+J024,Medical Receptionist,Healthcare,junior,DE,Cologne,2026-02-03 09:00
+J025,Logistics Coordinator,Logistics,mid,AT,Salzburg,2025-12-10 09:00
+J026,CNC Machine Operator,Manufacturing,junior,AT,Graz,2025-11-05 09:00
+J027,CNC Machine Operator,Manufacturing,mid,AT,Linz,2025-09-30 09:00
+J028,Quality Inspector,Manufacturing,senior,AT,Vienna,2025-10-12 09:00
+J029,Logistics Coordinator,Logistics,junior,DE,Cologne,2026-01-06 09:00
+J030,CNC Machine Operator,Manufacturing,senior,DE,Berlin,2026-01-12 09:00
+J031,Payroll Clerk,Office & Admin,mid,DE,Leipzig,2026-02-19 09:00
+J032,Warehouse Associate,Logistics,junior,DE,Berlin,2026-02-04 09:00
+J033,CNC Machine Operator,Manufacturing,mid,DE,Hamburg,2025-10-13 09:00
+J034,Logistics Coordinator,Logistics,mid,AT,Graz,2025-09-13 09:00
+J035,Forklift Operator,Logistics,mid,AT,Vienna,2026-01-10 09:00
+J036,Quality Inspector,Manufacturing,junior,DE,Leipzig,2026-01-26 09:00
+J037,Customer Service Agent,Office & Admin,mid,DE,Frankfurt,2026-02-16 09:00
+J038,Medical Receptionist,Healthcare,mid,DE,Leipzig,2025-12-14 09:00
+J039,Warehouse Associate,Logistics,junior,AT,Graz,2025-12-07 09:00
+J040,CNC Machine Operator,Manufacturing,junior,DE,Frankfurt,2025-11-22 09:00

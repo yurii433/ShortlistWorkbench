@@ -8,3 +8,4 @@ server/dist/
 pgdata/
 Task/
 IMPLEMENTATION_PLAN.md
+.prettierrc.json

@@ -8,7 +8,7 @@ You need **Node.js 20+**, **Docker**, and npm.
 
 ```bash
 cp .env.example .env
-docker compose up -d
+docker compose up -d --wait
 npm install
 npm run db:reset
 npm run dev
@@ -40,12 +40,12 @@ If a live call fails or returns invalid JSON, the API responds `502` with `{ "er
 
 ## API
 
-| Method | Path | Notes |
-| --- | --- | --- |
-| GET | `/applications` | Query: `status`, `country`, `jobFamily`, `sort` (`match_score` \| `created_at` \| `score_disagreement`), `order`, `page`, `pageSize` |
-| GET | `/applications/:id` | Application + candidate + job |
-| PATCH | `/applications/:id` | `{ "status": "shortlisted", "note": "optional" }` |
-| POST | `/applications/:id/llm-score` | Cached after first success |
+| Method | Path                          | Notes                                                                                                                                |
+| ------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| GET    | `/applications`               | Query: `status`, `country`, `jobFamily`, `sort` (`match_score` \| `created_at` \| `score_disagreement`), `order`, `page`, `pageSize` |
+| GET    | `/applications/:id`           | Application + candidate + job                                                                                                        |
+| PATCH  | `/applications/:id`           | `{ "status": "shortlisted", "note": "optional" }`                                                                                    |
+| POST   | `/applications/:id/llm-score` | Cached after first success                                                                                                           |
 
 `score_disagreement` only includes applications that already have an LLM score, ordered by `abs(llm_score - match_score * 100)`.
 

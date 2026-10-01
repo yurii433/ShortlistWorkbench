@@ -4,8 +4,11 @@ import { fileURLToPath } from "node:url";
 import { parse } from "csv-parse/sync";
 import type { PoolClient } from "pg";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-const dataDir = path.join(root, "Task", "data");
+const root = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../..",
+);
+const dataDir = path.join(root, "csv_data");
 
 function readCsv(file: string): Record<string, string>[] {
   const raw = fs.readFileSync(path.join(dataDir, file), "utf8");
