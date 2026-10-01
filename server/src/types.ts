@@ -1,5 +1,3 @@
-import type { ParsedListQuery } from "./http/listQuery.js";
-
 export const STATUSES = [
   "new",
   "in_review",
@@ -45,7 +43,6 @@ export type Candidate = {
   preferred_job_family: string;
 };
 
-/** A job plus its applicant counts per status, as shown on the jobs page. */
 export type JobWithCounts = Job & {
   application_count: number;
   new_count: number;
@@ -55,10 +52,6 @@ export type JobWithCounts = Job & {
   hired_count: number;
 };
 
-/**
- * One application with its job and candidate. The list and the detail endpoint
- * return the same shape, so the UI has a single type to render.
- */
 export type Application = {
   application_id: string;
   created_at: string;
@@ -81,14 +74,32 @@ export type LlmScore = {
   reason: string;
 };
 
-/** Server-side only. Implementations live in services/llm. */
 export type MatchScorer = {
   model: string;
   score(input: { job: Job; candidate: Candidate }): Promise<LlmScore>;
 };
 
-export type ListQuery = ParsedListQuery<ApplicationSortField>;
-export type JobListQuery = ParsedListQuery<JobSortField>;
+export type ListQuery = {
+  status?: string;
+  country?: string;
+  jobFamily?: string;
+  jobId?: string;
+  search?: string;
+  sort: ApplicationSortField;
+  order: "asc" | "desc";
+  page: number;
+  pageSize: number;
+};
+
+export type JobListQuery = {
+  country?: string;
+  jobFamily?: string;
+  search?: string;
+  sort: JobSortField;
+  order: "asc" | "desc";
+  page: number;
+  pageSize: number;
+};
 
 export function isStatus(value: string): value is Status {
   return (STATUSES as readonly string[]).includes(value);

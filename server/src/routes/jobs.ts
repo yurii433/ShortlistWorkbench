@@ -1,33 +1,37 @@
-import { Router } from "express";
-import { asyncHandler, badRequest, notFound } from "../http/asyncHandler.js";
-import { parseListQuery } from "../http/listQuery.js";
-import { JobsService } from "../services/jobs.js";
-import { JOB_SORT_FIELDS } from "../types.js";
+import { Router, type Request, type Response } from "express";
+import type { Pool } from "pg";
+import { listJobs, getJobById } from "../services/jobs.js";
 
-export function jobsRouter(service: JobsService): Router {
+export function jobsRouter(pool: Pool) {
   const router = Router();
 
-  router.get(
-    "/",
-    asyncHandler(async (req, res) => {
-      const parsed = parseListQuery(req.query, JOB_SORT_FIELDS, "created_at");
-      if (!parsed.ok) {
-        return badRequest(res, parsed.error);
+  router.get("/", async (req: Request, res: Response) => {
+    try {
+      const result = await listJobs(pool, req.query);
+      res.json(result);
+    } catch (e) {
+      if (e instanceof Error && ["invalid_sort", "invalid_order", "invalid_page", "invalid_page_size"].includes(e.message)) {
+        res.status(400).json({ error: e.message });
+        return;
       }
-      res.json(await service.list(parsed.value));
-    }),
-  );
+      console.error(e);
+      res.status(500).json({ error: "internal_error" });
+    }
+  });
 
-  router.get(
-    "/:id",
-    asyncHandler(async (req, res) => {
-      const job = await service.getById(req.params.id);
+  router.get("/:id", async (req: Request, res: Response) => {
+    try {
+      const job = await getJobById(pool, req.params.id);
       if (!job) {
-        return notFound(res);
+        res.status(404).json({ error: "not_found" });
+        return;
       }
       res.json(job);
-    }),
-  );
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "internal_error" });
+    }
+  });
 
   return router;
 }

@@ -1,77 +1,84 @@
-import { Router } from "express";
-import { asyncHandler, badRequest, notFound } from "../http/asyncHandler.js";
-import { parseListQuery } from "../http/listQuery.js";
-import { ApplicationsService } from "../services/applications.js";
-import { APPLICATION_SORT_FIELDS, isStatus, type Status } from "../types.js";
+import { Router, type Request, type Response } from "express";
+import type { Pool } from "pg";
+import type { MatchScorer } from "../types.js";
+import {
+  listApplications,
+  getApplicationById,
+  updateApplicationStatus,
+  scoreApplicationWithLlm,
+} from "../services/applications.js";
 
-export function applicationsRouter(service: ApplicationsService): Router {
+export function applicationsRouter(pool: Pool, scorer: MatchScorer) {
   const router = Router();
 
-  router.get(
-    "/",
-    asyncHandler(async (req, res) => {
-      const parsed = parseListQuery(
-        req.query,
-        APPLICATION_SORT_FIELDS,
-        "match_score",
-      );
-      if (!parsed.ok) {
-        return badRequest(res, parsed.error);
+  router.get("/", async (req: Request, res: Response) => {
+    try {
+      const result = await listApplications(pool, req.query);
+      res.json(result);
+    } catch (e) {
+      if (e instanceof Error && ["invalid_sort", "invalid_order", "invalid_page", "invalid_page_size", "invalid_status"].includes(e.message)) {
+        res.status(400).json({ error: e.message });
+        return;
       }
-      if (parsed.value.status && !isStatus(parsed.value.status)) {
-        return badRequest(res, "invalid_status");
-      }
-      res.json(await service.list(parsed.value));
-    }),
-  );
+      console.error(e);
+      res.status(500).json({ error: "internal_error" });
+    }
+  });
 
-  router.get(
-    "/:id",
-    asyncHandler(async (req, res) => {
-      const application = await service.getById(req.params.id);
+  router.get("/:id", async (req: Request, res: Response) => {
+    try {
+      const application = await getApplicationById(pool, req.params.id);
       if (!application) {
-        return notFound(res);
+        res.status(404).json({ error: "not_found" });
+        return;
       }
       res.json(application);
-    }),
-  );
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "internal_error" });
+    }
+  });
 
-  router.patch(
-    "/:id",
-    asyncHandler(async (req, res) => {
+  router.patch("/:id", async (req: Request, res: Response) => {
+    try {
       const { status, note } = req.body ?? {};
-      if (typeof status !== "string" || !isStatus(status)) {
-        return badRequest(res, "invalid_status");
+      if (typeof status !== "string") {
+        res.status(400).json({ error: "invalid_status" });
+        return;
       }
-      if (note !== undefined && typeof note !== "string") {
-        return badRequest(res, "invalid_note");
-      }
-      const application = await service.updateStatus(
-        req.params.id,
-        status as Status,
-        note,
-      );
+      const application = await updateApplicationStatus(pool, req.params.id, status, note);
       if (!application) {
-        return notFound(res);
+        res.status(404).json({ error: "not_found" });
+        return;
       }
       res.json(application);
-    }),
-  );
+    } catch (e) {
+      if (e instanceof Error && ["invalid_status", "invalid_note"].includes(e.message)) {
+        res.status(400).json({ error: e.message });
+        return;
+      }
+      console.error(e);
+      res.status(500).json({ error: "internal_error" });
+    }
+  });
 
-  router.post(
-    "/:id/llm-score",
-    asyncHandler(async (req, res) => {
-      const result = await service.scoreWithLlm(req.params.id);
-      if (result.kind === "not_found") {
-        return notFound(res);
+  router.post("/:id/llm-score", async (req: Request, res: Response) => {
+    try {
+      const application = await scoreApplicationWithLlm(pool, scorer, req.params.id);
+      res.json(application);
+    } catch (e) {
+      if (e instanceof Error && e.message === "not_found") {
+        res.status(404).json({ error: "not_found" });
+        return;
       }
-      if (result.kind === "llm_unavailable") {
-        // The caller keeps working; it just gets no LLM score.
-        return res.status(502).json({ error: "llm_unavailable" });
+      if (e instanceof Error && e.message === "llm_unavailable") {
+        res.status(502).json({ error: "llm_unavailable" });
+        return;
       }
-      res.json(result.application);
-    }),
-  );
+      console.error(e);
+      res.status(500).json({ error: "internal_error" });
+    }
+  });
 
   return router;
 }

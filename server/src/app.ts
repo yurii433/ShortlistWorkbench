@@ -1,10 +1,8 @@
 import express from "express";
 import type { Pool } from "pg";
-import { applicationsRouter } from "./routes/applications.js";
-import { jobsRouter } from "./routes/jobs.js";
-import { ApplicationsService } from "./services/applications.js";
-import { JobsService } from "./services/jobs.js";
 import type { MatchScorer } from "./types.js";
+import { jobsRouter } from "./routes/jobs.js";
+import { applicationsRouter } from "./routes/applications.js";
 
 export function createApp(pool: Pool, scorer: MatchScorer) {
   const app = express();
@@ -13,8 +11,9 @@ export function createApp(pool: Pool, scorer: MatchScorer) {
   app.get("/health", (_req, res) => {
     res.json({ ok: true });
   });
-  app.use("/jobs", jobsRouter(new JobsService(pool)));
-  app.use("/applications", applicationsRouter(new ApplicationsService(pool, scorer)));
+
+  app.use("/jobs", jobsRouter(pool));
+  app.use("/applications", applicationsRouter(pool, scorer));
 
   app.use(
     (
