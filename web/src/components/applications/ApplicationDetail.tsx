@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchApplication, patchStatus, requestLlmScore } from "../../api";
 import type { Application, Status } from "../../domain";
-import { STATUSES, STATUS_LABELS } from "../../domain";
+import { MATCH_BAND_LABELS, STATUSES, STATUS_LABELS } from "../../domain";
 import { toDateTime, toPercent } from "../../format";
 import { ErrorState } from "../ui/ErrorState";
 import { StatusBadge } from "../ui/StatusBadge";
@@ -137,13 +137,17 @@ export function ApplicationDetail({ applicationId, onRowChange, onStatusSaved }:
             label="Location"
             value={`${detail.job.city}, ${detail.job.country}`}
           />
-          <Fact label="Source" value={detail.source} />
         </dl>
       </section>
 
       <section>
         <h3>Candidate</h3>
         <dl className="facts">
+          <Fact label="Source" value={detail.source} />
+          <Fact
+            label="Match band"
+            value={MATCH_BAND_LABELS[detail.match_band] ?? detail.match_band}
+          />
           <Fact
             label="Experience"
             value={`${detail.candidate.years_experience} years`}
@@ -228,7 +232,8 @@ function Fact({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * Keeps a draft note and saves it with the current status on blur. Remounting via
+ * Keeps a draft note and saves it with the current status. Saving is explicit so
+ * a half-written comment is not sent the moment focus moves away. Remounting via
  * `key` when the stored note changes picks up a note saved elsewhere.
  */
 function NoteField({
@@ -239,20 +244,28 @@ function NoteField({
   onSave: (status: Status, note?: string) => void;
 }) {
   const stored = detail.recruiter_note ?? "";
+  const [draft, setDraft] = useState(stored);
+  const value = draft.trim();
   return (
-    <label className="note-label">
-      Note (optional)
-      <textarea
-        key={detail.application_id + stored}
-        defaultValue={stored}
-        rows={3}
-        onBlur={(event) => {
-          const value = event.target.value.trim();
-          if (value !== stored) {
-            onSave(detail.status, value);
-          }
-        }}
-      />
-    </label>
+    <>
+      <label className="note-label">
+        Note (optional)
+        <textarea
+          key={detail.application_id + stored}
+          value={draft}
+          rows={3}
+          onChange={(event) => setDraft(event.target.value)}
+        />
+      </label>
+      <div className="note-actions">
+        <button
+          type="button"
+          disabled={value === stored}
+          onClick={() => onSave(detail.status, value)}
+        >
+          Save note
+        </button>
+      </div>
+    </>
   );
 }

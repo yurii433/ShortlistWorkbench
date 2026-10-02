@@ -96,6 +96,10 @@ h3 {
   font-size: 0.85rem;
 }
 
+.note-actions {
+  margin-top: 0.5rem;
+}
+
 select,
 textarea {
   border: 1px solid var(--line);

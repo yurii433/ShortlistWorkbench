@@ -16,6 +16,12 @@ export const STATUS_LABELS: Record<Status, string> = {
   hired: "Hired",
 };
 
+export const MATCH_BAND_LABELS: Record<string, string> = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+};
+
 export const JOB_FAMILIES = [
   "Logistics",
   "Manufacturing",
