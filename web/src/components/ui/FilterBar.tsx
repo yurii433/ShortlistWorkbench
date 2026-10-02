@@ -1,0 +1,126 @@
+import { useState } from "react";
+import type { FilterField, SortOption } from "../../filterTypes";
+import { FilterGroup } from "./FilterGroup";
+import { FilterSelect } from "./FilterSelect";
+import { FilterTextInput } from "./FilterTextInput";
+import { SortSelect } from "./SortSelect";
+
+type Props<S extends object> = {
+  /** Field definitions, keyed the same way as the keys they occupy in `state`. */
+  fields: Record<string, FilterField>;
+  /** The page's query state; only the filter keys are read here. */
+  state: S;
+  onChange: (patch: Partial<S>) => void;
+  onClear: () => void;
+  sort: string;
+  order: string;
+  onSort: (sort: string, order: string) => void;
+  sortOptions: readonly SortOption[];
+};
+
+/**
+ * The filter and sort block of a list page. Sort stays visible because it is a
+ * control the recruiter reaches for constantly; the filters themselves sit
+ * behind a toggle so a screen of checkboxes does not push the list off-screen.
+ * It is a normal in-flow section, not an overlay: nothing is covered up while
+ * it is open.
+ */
+export function FilterBar<S extends object>({
+  fields,
+  state,
+  onChange,
+  onClear,
+  sort,
+  order,
+  onSort,
+  sortOptions,
+}: Props<S>) {
+  const [open, setOpen] = useState(false);
+
+  const entries = Object.entries(fields);
+  const activeCount = entries.reduce((total, [key]) => {
+    const value = state[key as keyof S];
+    return total + (Array.isArray(value) ? value.length : 0);
+  }, 0);
+
+  return (
+    <div className="filter-bar">
+      <div className="filter-bar-head">
+        <button
+          type="button"
+          className="filter-toggle"
+          aria-expanded={open}
+          onClick={() => setOpen((isOpen) => !isOpen)}
+        >
+          Filters{activeCount > 0 ? ` · ${activeCount} active` : ""}
+        </button>
+        {activeCount > 0 ? (
+          <button type="button" className="link-button" onClick={onClear}>
+            Clear all
+          </button>
+        ) : null}
+        <SortSelect
+          value={sort}
+          order={order}
+          options={sortOptions}
+          onChange={onSort}
+        />
+      </div>
+
+      {open ? (
+        <div className="filter-grid">
+          {entries.map(([key, field]) => (
+            <FilterControl
+              key={key}
+              field={field}
+              selected={state[key as keyof S] as string[]}
+              // A computed key over a union of keys widens to `{[k: string]: …}`,
+              // so this is the one place the patch needs a cast.
+              onChange={(next) => onChange({ [key]: next } as Partial<S>)}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function FilterControl({
+  field,
+  selected,
+  onChange,
+}: {
+  field: FilterField;
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const options = field.options ?? [];
+  if (field.kind === "text") {
+    return (
+      <FilterTextInput
+        label={field.label}
+        placeholder={field.placeholder}
+        selected={selected}
+        onChange={onChange}
+      />
+    );
+  }
+  if (field.kind === "select") {
+    return (
+      <FilterSelect
+        label={field.label}
+        options={options}
+        selected={selected}
+        onChange={onChange}
+      />
+    );
+  }
+  return (
+    <FilterGroup
+      label={field.label}
+      options={options}
+      selected={selected}
+      onChange={onChange}
+    />
+  );
+}

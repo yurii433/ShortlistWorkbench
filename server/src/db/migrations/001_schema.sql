@@ -42,8 +42,14 @@ CREATE TABLE applications (
 CREATE INDEX idx_jobs_country ON jobs (country);
 CREATE INDEX idx_jobs_job_family ON jobs (job_family);
 CREATE INDEX idx_applications_status ON applications (status);
+CREATE INDEX idx_applications_source ON applications (source);
+CREATE INDEX idx_applications_match_band ON applications (match_band);
 CREATE INDEX idx_applications_match_score ON applications (match_score DESC);
 CREATE INDEX idx_applications_created_at ON applications (created_at DESC);
 CREATE INDEX idx_applications_status_score ON applications (status, match_score DESC);
 CREATE INDEX idx_applications_job_id ON applications (job_id);
 CREATE INDEX idx_applications_candidate_id ON applications (candidate_id);
+CREATE INDEX idx_candidates_country ON candidates (country);
+CREATE INDEX idx_candidates_city ON candidates (city);
+CREATE INDEX idx_candidates_years_experience ON candidates (years_experience);
+CREATE INDEX idx_candidates_preferred_job_family ON candidates (preferred_job_family);

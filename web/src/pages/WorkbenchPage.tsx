@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { fetchApplications, fetchJob } from "../api";
+import {
+  APPLICATION_FILTER_DEFAULTS,
+  APPLICATION_FILTER_PARAMS,
+  minExperienceOf,
+  type ApplicationFilterKey,
+} from "../applicationFilters";
 import type { Application, JobWithCounts } from "../domain";
 import { ApplicationDetail } from "../components/applications/ApplicationDetail";
 import { ApplicationFilters } from "../components/applications/ApplicationFilters";
@@ -9,8 +15,11 @@ import { pageCountOf, rangeLabel } from "../format";
 import { useListQuery } from "../hooks/useListQuery";
 import { useUrlQuery } from "../hooks/useUrlQuery";
 
-export type ApplicationsQueryState = {
-  status: string;
+/**
+ * One filter list per field, so several ticks inside a group survive a reload
+ * and reach the API as repeated query parameters.
+ */
+export type ApplicationsQueryState = Record<ApplicationFilterKey, string[]> & {
   sort: string;
   order: string;
   page: number;
@@ -19,7 +28,7 @@ export type ApplicationsQueryState = {
 };
 
 const DEFAULTS: ApplicationsQueryState = {
-  status: "",
+  ...APPLICATION_FILTER_DEFAULTS,
   sort: "match_score",
   order: "desc",
   page: 1,
@@ -27,7 +36,7 @@ const DEFAULTS: ApplicationsQueryState = {
 };
 
 const PARAM_NAMES = {
-  status: "status",
+  ...APPLICATION_FILTER_PARAMS,
   sort: "sort",
   order: "order",
   page: "page",
@@ -46,14 +55,12 @@ export function WorkbenchPage() {
   const fetcher = useCallback(
     () =>
       fetchApplications({
+        ...query,
         jobId: jobId ?? "",
-        status: query.status,
-        sort: query.sort,
-        order: query.order,
-        page: query.page,
+        minExperience: minExperienceOf(query.experience),
         pageSize: PAGE_SIZE,
       }),
-    [jobId, query.status, query.sort, query.order, query.page],
+    [jobId, query],
   );
   const { items, total, loading, error, reload, setItems } = useListQuery(
     fetcher,

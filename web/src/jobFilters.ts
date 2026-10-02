@@ -1,0 +1,51 @@
+import { COUNTRIES, JOB_FAMILIES } from "./domain";
+import type { FilterField, SortOption } from "./filterTypes";
+
+/**
+ * The jobs list filters. Declared as a key tuple first so `satisfies` rejects a
+ * missing or misspelled filter.
+ */
+export const JOB_FILTER_KEYS = ["search", "country", "jobFamily"] as const;
+
+export type JobFilterKey = (typeof JOB_FILTER_KEYS)[number];
+
+export type JobFilterFields = Record<JobFilterKey, FilterField>;
+
+export const JOB_FILTERS = {
+  search: {
+    param: "q",
+    label: "Search",
+    kind: "text",
+    placeholder: "Title or city",
+  },
+  country: {
+    param: "country",
+    label: "Country",
+    kind: "select",
+    options: COUNTRIES.map(({ code, name }) => ({ value: code, label: name })),
+  },
+  jobFamily: {
+    param: "jobFamily",
+    label: "Job family",
+    kind: "select",
+    options: JOB_FAMILIES.map((family) => ({ value: family, label: family })),
+  },
+} satisfies JobFilterFields;
+
+export const JOB_SORT_OPTIONS: readonly SortOption[] = [
+  ["application_count:desc", "Most applicants"],
+  ["application_count:asc", "Fewest applicants"],
+  ["created_at:desc", "Newest first"],
+  ["created_at:asc", "Oldest first"],
+  ["title:asc", "Title (A → Z)"],
+  ["title:desc", "Title (Z → A)"],
+];
+
+/** See `APPLICATION_FILTER_PARAMS` for why these are derived with a cast. */
+export const JOB_FILTER_PARAMS = Object.fromEntries(
+  JOB_FILTER_KEYS.map((key) => [key, JOB_FILTERS[key].param]),
+) as Record<JobFilterKey, string>;
+
+export const JOB_FILTER_DEFAULTS = Object.fromEntries(
+  JOB_FILTER_KEYS.map((key) => [key, [] as string[]]),
+) as Record<JobFilterKey, string[]>;

@@ -1,55 +1,32 @@
-import { STATUSES, STATUS_LABELS } from "../../domain";
+import {
+  APPLICATION_FILTERS,
+  APPLICATION_FILTER_DEFAULTS,
+  APPLICATION_SORT_OPTIONS,
+} from "../../applicationFilters";
 import type { ApplicationsQueryState } from "../../pages/WorkbenchPage";
+import { FilterBar } from "../ui/FilterBar";
 
 type Props = {
   query: ApplicationsQueryState;
   onChange: (patch: Partial<ApplicationsQueryState>) => void;
 };
 
-const SORT_OPTIONS = [
-  ["match_score:desc", "Match score (high → low)"],
-  ["match_score:asc", "Match score (low → high)"],
-  ["created_at:desc", "Newest first"],
-  ["created_at:asc", "Oldest first"],
-  ["score_disagreement:desc", "LLM vs rule-based gap"],
-] as const;
-
+/**
+ * The candidate filters of the workbench. Which filters exist, what they are
+ * called and which URL parameter each one lives under all come from
+ * `APPLICATION_FILTERS`; this only says that changing one goes back to page 1.
+ */
 export function ApplicationFilters({ query, onChange }: Props) {
-  const change = (patch: Partial<ApplicationsQueryState>) =>
-    onChange({ ...patch, page: 1 });
-
   return (
-    <div className="filters filters-candidates">
-      <label>
-        Status
-        <select
-          value={query.status}
-          onChange={(event) => change({ status: event.target.value })}
-        >
-          <option value="">All</option>
-          {STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {STATUS_LABELS[status]}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Sort
-        <select
-          value={`${query.sort}:${query.order}`}
-          onChange={(event) => {
-            const [sort, order] = event.target.value.split(":");
-            change({ sort, order });
-          }}
-        >
-          {SORT_OPTIONS.map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </label>
-    </div>
+    <FilterBar
+      fields={APPLICATION_FILTERS}
+      state={query}
+      onChange={(patch) => onChange({ ...patch, page: 1 })}
+      onClear={() => onChange({ ...APPLICATION_FILTER_DEFAULTS, page: 1 })}
+      sort={query.sort}
+      order={query.order}
+      onSort={(sort, order) => onChange({ sort, order, page: 1 })}
+      sortOptions={APPLICATION_SORT_OPTIONS}
+    />
   );
 }

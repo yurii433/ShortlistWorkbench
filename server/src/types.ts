@@ -8,6 +8,11 @@ export const STATUSES = [
 
 export type Status = (typeof STATUSES)[number];
 
+/** Mirrors the `match_band` CHECK on applications. */
+export const MATCH_BANDS = ["low", "medium", "high"] as const;
+
+export type MatchBand = (typeof MATCH_BANDS)[number];
+
 export type Job = {
   job_id: string;
   title: string;
@@ -58,7 +63,7 @@ export type Application = {
   created_at: string;
   source: string;
   match_score: number;
-  match_band: string;
+  match_band: MatchBand;
   status: Status;
   status_updated_at: string | null;
   recruiter_note: string | null;
@@ -96,4 +101,8 @@ export type ListResult<T> = {
 
 export function isStatus(value: string): value is Status {
   return (STATUSES as readonly string[]).includes(value);
+}
+
+export function isMatchBand(value: string): value is MatchBand {
+  return (MATCH_BANDS as readonly string[]).includes(value);
 }

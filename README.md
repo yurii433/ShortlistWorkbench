@@ -50,18 +50,22 @@ Around those modules:
 - **`server/src/app.ts`** — wires the layers together bottom up: pool → repositories → services → handlers → routers. `createApp(pool, scorer)` takes both as arguments, which is how the tests point the whole app at their own database.
 - **`server/src/errors.ts`** — `BadRequestError`, `NotFoundError`, `BadGatewayError`. Services raise them; `error-handler` is the only place that turns one into a status code.
 - **`server/src/http`** — request concerns shared by every route: query-string parsing and validation, async error forwarding, and the single error → response mapping.
-- **`server/src/db`** — connection pool, migrations in `db/migrations/*.sql`, CSV seed in `db/seed`.
+- **`server/src/db`** — connection pool, migrations in `db/migrations/*.sql`, CSV seed in `db/seed`, and `filter-builder.ts`: the one place a list query turns into `WHERE` predicates plus their bound values.
 - **`server/src/llm.ts`** — the `MatchScorer` mock and Anthropic implementations, plus the one validator for a model score.
 - **`server/src/types.ts`** — the domain vocabulary (`Status`, `Job`, `Candidate`, `Application`) the layers share.
 - **`web/src/domain.ts`** — types and vocabulary (`Status`, `Job`, `Application`) shared by the UI.
 - **`web/src/api.ts`** — transport only.
+- **`web/src/applicationFilters.ts`, `web/src/jobFilters.ts`** — what each list page can filter on. One definition per filter (label, URL parameter, options), which is what lets `FilterBar` render them and both pages build their URL state without a second list to keep in sync.
+- **`web/src/components/ui/FilterBar`** — the collapsible filter block, shared by both list pages.
 - **`web/src/pages`, `web/src/components`** — UI.
 
 ### Behaviour worth knowing
 
 - **The recruiter lands on the job list** (`/`), not on a flat application list. Each row shows the job plus how many applicants it has, broken down by status. Picking a job opens its candidates.
 - **The candidate list is always scoped to one job** (`/job/:jobId`). The job title, location, family, and seniority head the page; a "← All jobs" link goes back.
-- **Filters, sort, and pagination run in SQL**, not in the browser. The job list filters on country, job family, and a title/city search. The candidate list filters on application status. Both reset to page 1 when a filter changes, so you never land on an out-of-range page.
+- **Filters, sort, and pagination run in SQL**, not in the browser. The job list filters on country, job family, and a title/city search. The candidate list filters on application status, source, match band, and — for the candidate — country, city, years of experience, and preferred job family. Both reset to page 1 when a filter changes, so you never land on an out-of-range page.
+- **Filters are checkbox groups behind a "Filters" button.** Ticks inside one group are combined with `IN`, groups with `AND`, and unticking everything means "all" — there is no separate All option to keep in sync with the data. The block is a normal in-flow section rather than an overlay, so opening it pushes the list down instead of covering it; sort stays visible outside the toggle because it is a control you reach for constantly. The button carries a count of active ticks.
+- **Years of experience is a set of thresholds, not disjoint ranges.** Ticking "6–9 years" sends `minExperience=6`, which the API compares with `>=`. Ticking several buckets therefore keeps candidates with *at least* the lowest one ticked, so ticking "0–2 years" together with anything else removes the filter.
 - Default candidate sort is match score high → low.
 - **Every application is kept, even when the same candidate applies to the same job twice.** Nothing is deduplicated or hidden. Each application carries `sibling_application_ids` — that candidate's *other* applications to that same job, newest first. It is empty for a single application, and the row then shows nothing extra. When it is not empty the row grows a "2 applications" badge plus an **also applied as** link to each sibling, so the recruiter can jump straight across instead of hunting for a matching name. The siblings are resolved in SQL and deliberately **not** narrowed by the active filters, so the link still works while you filter by status or sit on another page.
 - Detail is a **side panel**. Changing status updates the selected row without losing list position (optimistic update, rollback on failure). The panel shows when the status last changed, so a recruiter can see how stale a decision is.
@@ -77,7 +81,7 @@ If a live call fails or returns invalid JSON, the API responds `502` with `{ "er
 | ------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | GET    | `/jobs`                       | Query: `country`, `jobFamily`, `search` (title or city), `sort` (`created_at` \| `title` \| `application_count`), `order`, `page`, `pageSize` |
 | GET    | `/jobs/:id`                   | Job + applicant counts by status                                                                                                    |
-| GET    | `/applications`               | Query: `jobId`, `status`, `country`, `jobFamily`, `sort` (`match_score` \| `created_at` \| `score_disagreement`), `order`, `page`, `pageSize` |
+| GET    | `/applications`               | Query: `jobId`, `source`, `matchBand`, `candidateCountry`, `candidateCity`, `preferredJobFamily`, `minExperience`, `status`, `country`, `jobFamily`, `sort` (`match_score` \| `created_at` \| `score_disagreement`), `order`, `page`, `pageSize`. Every filter except `minExperience` takes a repeated parameter: `?status=new&status=hired` means both |
 | GET    | `/applications/:id`           | Application + candidate + job                                                                                                        |
 | PATCH  | `/applications/:id`           | `{ "status": "shortlisted", "note": "optional" }` — `status` is required, `note` is not                                                                                           |
 | POST   | `/applications/:id/llm-score` | Cached after first success                                                                                                           |
@@ -94,11 +98,12 @@ Every application object — list, detail, PATCH, and LLM score alike — carrie
 npm test
 ```
 
-Needs Compose Postgres up (uses database `shortlist_test` on port 5433). Covers list filtering, sorting, pagination and per-job scoping; parameter validation; status updates (including note preservation); repeat applications and their sibling links across filters; the LLM cache, its invalid-payload guard and the disagreement sort; and the jobs list with its counts.
+Needs Compose Postgres up (uses database `shortlist_test` on port 5433). Covers list filtering (single and multi-value, across groups, and the candidate-side filters), sorting, pagination and per-job scoping; parameter validation; status updates (including note preservation); repeat applications and their sibling links across filters; the LLM cache, its invalid-payload guard and the disagreement sort; and the jobs list with its counts.
 
 ## Assumptions
 
-- List `country` / `jobFamily` on `/applications` refer to the job, not the candidate. The candidate list is scoped to one job, so the UI only exposes the status filter; both filters are still available to any other API client.
+- List `country` / `jobFamily` on `/applications` refer to the **job**; `candidateCountry` / `candidateCity` / `preferredJobFamily` / `minExperience` refer to the **candidate**. The candidate list is scoped to one job, so the UI only exposes the candidate-side filters plus the application-side ones; the job-side pair is still available to any other API client.
+- `status` and `matchBand` are closed sets (they have CHECK constraints), so an unknown value is a `400`. `source` is free text, because the values are whatever the CSVs and the recruiter's own imports contain.
 - A candidate may hold several applications to the same job. The schema has no `UNIQUE (job_id, candidate_id)`, and `csv_data/applications.csv` really does contain such pairs, so this is a live case rather than a hypothetical. All of them are stored and listed; the UI links the repeats together instead of collapsing them.
 - `sibling_application_ids` is scoped per job: a candidate with three applications to three *different* jobs has no siblings on any of them.
 - `application_count` on a job row counts applications, so a job with a repeat applicant reports more applications than distinct people.

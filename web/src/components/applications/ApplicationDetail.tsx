@@ -146,7 +146,7 @@ export function ApplicationDetail({ applicationId, onRowChange, onStatusSaved }:
           <Fact label="Source" value={detail.source} />
           <Fact
             label="Match band"
-            value={MATCH_BAND_LABELS[detail.match_band] ?? detail.match_band}
+            value={MATCH_BAND_LABELS[detail.match_band]}
           />
           <Fact
             label="Experience"

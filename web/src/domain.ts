@@ -16,10 +16,24 @@ export const STATUS_LABELS: Record<Status, string> = {
   hired: "Hired",
 };
 
-export const MATCH_BAND_LABELS: Record<string, string> = {
+export const MATCH_BANDS = ["low", "medium", "high"] as const;
+
+export type MatchBand = (typeof MATCH_BANDS)[number];
+
+export const MATCH_BAND_LABELS: Record<MatchBand, string> = {
   low: "Low",
   medium: "Medium",
   high: "High",
+};
+
+export const SOURCES = ["referral", "job_board", "career_site"] as const;
+
+export type Source = (typeof SOURCES)[number];
+
+export const SOURCE_LABELS: Record<Source, string> = {
+  referral: "Referral",
+  job_board: "Job board",
+  career_site: "Career site",
 };
 
 export const JOB_FAMILIES = [
@@ -33,6 +47,32 @@ export const JOB_FAMILIES = [
 export const COUNTRIES = [
   { code: "DE", name: "Germany" },
   { code: "AT", name: "Austria" },
+] as const;
+
+/** The cities the CSVs contain. Jobs and candidates share the same set. */
+export const CITIES = [
+  "Berlin",
+  "Cologne",
+  "Frankfurt",
+  "Graz",
+  "Hamburg",
+  "Innsbruck",
+  "Leipzig",
+  "Linz",
+  "Munich",
+  "Salzburg",
+  "Vienna",
+] as const;
+
+/**
+ * Years-of-experience buckets. The value is the *minimum* years a bucket keeps,
+ * so ticking several buckets is the same as ticking the lowest one.
+ */
+export const EXPERIENCE_BUCKETS = [
+  { value: "0", label: "0–2 years" },
+  { value: "3", label: "3–5 years" },
+  { value: "6", label: "6–9 years" },
+  { value: "10", label: "10+ years" },
 ] as const;
 
 export type Job = {
@@ -89,7 +129,7 @@ export type Application = {
   created_at: string;
   source: string;
   match_score: number;
-  match_band: string;
+  match_band: MatchBand;
   status: Status;
   status_updated_at: string | null;
   recruiter_note: string | null;

@@ -1,6 +1,11 @@
 import { BadRequestError } from "../../errors.js";
-import { readPaging, readSort, readText } from "../../http/list-query.js";
-import { isStatus } from "../../types.js";
+import {
+  readNonNegativeInt,
+  readPaging,
+  readSort,
+  readTextList,
+} from "../../http/list-query.js";
+import { isMatchBand, isStatus } from "../../types.js";
 import {
   APPLICATION_SORT_FIELDS,
   type ApplicationListQuery,
@@ -11,18 +16,28 @@ import {
 export function parseApplicationListQuery(
   query: Record<string, unknown>,
 ): ApplicationListQuery {
-  const status = readText(query.status);
-  if (status !== undefined && !isStatus(status)) {
+  const status = readTextList(query.status);
+  if (!status.every(isStatus)) {
     throw new BadRequestError("invalid_status");
+  }
+
+  const matchBand = readTextList(query.matchBand);
+  if (!matchBand.every(isMatchBand)) {
+    throw new BadRequestError("invalid_match_band");
   }
 
   return {
     ...readPaging(query),
     status,
-    country: readText(query.country),
-    jobFamily: readText(query.jobFamily),
-    jobId: readText(query.jobId),
-    search: readText(query.search),
+    source: readTextList(query.source),
+    matchBand,
+    candidateCountry: readTextList(query.candidateCountry),
+    candidateCity: readTextList(query.candidateCity),
+    preferredJobFamily: readTextList(query.preferredJobFamily),
+    minExperience: readNonNegativeInt(query.minExperience),
+    country: readTextList(query.country),
+    jobFamily: readTextList(query.jobFamily),
+    jobId: readTextList(query.jobId),
     sort: readSort(query.sort, APPLICATION_SORT_FIELDS, "match_score"),
   };
 }

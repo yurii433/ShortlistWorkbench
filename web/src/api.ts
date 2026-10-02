@@ -8,9 +8,9 @@ export type ListResponse<T> = {
 };
 
 export type JobListParams = {
-  country: string;
-  jobFamily: string;
-  search: string;
+  country: string[];
+  jobFamily: string[];
+  search: string[];
   sort: string;
   order: string;
   page: number;
@@ -19,18 +19,35 @@ export type JobListParams = {
 
 export type ApplicationListParams = {
   jobId: string;
-  status: string;
+  status: string[];
+  source: string[];
+  matchBand: string[];
+  candidateCountry: string[];
+  candidateCity: string[];
+  preferredJobFamily: string[];
+  /** Years of experience the candidate must have at least. */
+  minExperience: number | undefined;
   sort: string;
   order: string;
   page: number;
   pageSize: number;
 };
 
-/** Builds a query string, skipping filters that are not set. */
-function toQuery(params: Record<string, string | number | undefined>): string {
+/**
+ * Builds a query string. A list becomes one repeated parameter per value, so
+ * several values inside one filter reach the API as `?status=a&status=b`.
+ * Filters that are not set are skipped.
+ */
+function toQuery(
+  params: Record<string, string | number | string[] | undefined>,
+): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== "") {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (item !== "") search.append(key, item);
+      }
+    } else if (value !== undefined && value !== "") {
       search.set(key, String(value));
     }
   }

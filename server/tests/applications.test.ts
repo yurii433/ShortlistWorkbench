@@ -69,6 +69,18 @@ describe("applications API", () => {
     const badStatus = await request(app).get("/applications").query({ status: "nope" });
     expect(badStatus.status).toBe(400);
     expect(badStatus.body.error).toBe("invalid_status");
+
+    const badBand = await request(app)
+      .get("/applications")
+      .query({ matchBand: ["high", "nope"] });
+    expect(badBand.status).toBe(400);
+    expect(badBand.body.error).toBe("invalid_match_band");
+
+    const badExperience = await request(app)
+      .get("/applications")
+      .query({ minExperience: "-1" });
+    expect(badExperience.status).toBe(400);
+    expect(badExperience.body.error).toBe("invalid_experience");
   });
 
   it("scopes the application list to a single job", async () => {
@@ -157,6 +169,81 @@ describe("repeated applications", () => {
     const response = await request(app).get("/applications/A1");
     expect(response.status).toBe(200);
     expect(response.body.sibling_application_ids).toEqual(["A7"]);
+  });
+});
+
+describe("candidate filters", () => {
+  /** The application ids the request returned, sorted so order is not asserted. */
+  async function idsMatching(
+    query: Record<string, unknown>,
+  ): Promise<string[]> {
+    const response = await request(app).get("/applications").query(query);
+    expect(response.status).toBe(200);
+    return response.body.items
+      .map((item: { application_id: string }) => item.application_id)
+      .sort();
+  }
+
+  // Fixtures: C1 is DE/Hamburg/4y/Logistics, C2 is AT/Vienna/8y/IT,
+  // C3 is DE/Berlin/2y/Healthcare. Sources are referral (A1, A3, A5),
+  // job_board (A2, A6) and agency (A4).
+
+  it("takes several values inside one filter", async () => {
+    expect(await idsMatching({ status: ["new", "in_review"] })).toEqual([
+      "A1",
+      "A2",
+      "A3",
+      "A5",
+    ]);
+    expect(await idsMatching({ source: ["referral", "job_board"] })).toEqual([
+      "A1",
+      "A2",
+      "A3",
+      "A5",
+      "A6",
+    ]);
+    expect(await idsMatching({ matchBand: ["low", "high"] })).toEqual([
+      "A1",
+      "A4",
+      "A5",
+      "A6",
+    ]);
+  });
+
+  it("filters the candidate, not the job", async () => {
+    // A3 and A4 apply to different jobs but both candidates prefer IT/…
+    expect(await idsMatching({ preferredJobFamily: "IT" })).toEqual(["A2", "A3"]);
+    expect(await idsMatching({ candidateCountry: "AT" })).toEqual(["A2", "A3"]);
+    expect(await idsMatching({ candidateCity: "Vienna" })).toEqual(["A2", "A3"]);
+    expect(await idsMatching({ preferredJobFamily: "Healthcare" })).toEqual([
+      "A4",
+      "A6",
+    ]);
+  });
+
+  it("keeps candidates at or above the minimum experience", async () => {
+    expect(await idsMatching({ minExperience: 6 })).toEqual(["A2", "A3"]);
+    expect(await idsMatching({ minExperience: 3 })).toEqual([
+      "A1",
+      "A2",
+      "A3",
+      "A5",
+    ]);
+    expect(await idsMatching({ minExperience: 0 })).toHaveLength(6);
+  });
+
+  it("combines filters from different groups", async () => {
+    expect(
+      await idsMatching({
+        status: ["new"],
+        preferredJobFamily: "IT",
+        candidateCountry: "AT",
+      }),
+    ).toEqual(["A3"]);
+  });
+
+  it("returns everything when no value is selected", async () => {
+    expect(await idsMatching({ status: [], candidateCity: [] })).toHaveLength(6);
   });
 });
 

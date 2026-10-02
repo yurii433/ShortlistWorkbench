@@ -1,4 +1,5 @@
 import { pageOffset, sqlDirection } from "../../http/list-query.js";
+import { FilterBuilder } from "../../db/filter-builder.js";
 import type { Queryable } from "../../db/queryable.js";
 import { toIsoDate } from "../../db/row-utils.js";
 import type { JobWithCounts } from "../../types.js";
@@ -63,24 +64,14 @@ export type JobRepository = {
 export function createJobRepository(db: Queryable): JobRepository {
   return {
     async list(query) {
-      const filters: string[] = [];
-      const values: unknown[] = [];
+      const filters = new FilterBuilder();
+      filters
+        .eq("j.country", query.country)
+        .eq("j.job_family", query.jobFamily)
+        .containsAny(["j.title", "j.city"], query.search ? `%${query.search}%` : "");
 
-      const filterBy = (column: string, value: string | undefined) => {
-        if (!value) return;
-        values.push(value);
-        filters.push(`${column} = $${values.length}`);
-      };
-
-      filterBy("j.country", query.country);
-      filterBy("j.job_family", query.jobFamily);
-
-      if (query.search) {
-        values.push(`%${query.search}%`);
-        filters.push(`(j.title ILIKE $${values.length} OR j.city ILIKE $${values.length})`);
-      }
-
-      const where = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+      const where = filters.where();
+      const values = filters.params();
       const direction = sqlDirection(query.order);
 
       const countSql = `SELECT COUNT(DISTINCT j.job_id)::int AS total ${FROM_JOBS} ${where}`;

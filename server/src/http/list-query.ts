@@ -18,6 +18,32 @@ export function readText(value: unknown): string | undefined {
 }
 
 /**
+ * Every value of a repeated query parameter, so `?status=new&status=hired` reads
+ * as a list. A single `?status=new` reads as a one-item list, which keeps one
+ * filter shape for both the single-select and the checkbox UI. Blanks are
+ * dropped and duplicates collapse, so the result is always safe to bind.
+ */
+export function readTextList(value: unknown): string[] {
+  const raw = Array.isArray(value) ? value : [value];
+  const result: string[] = [];
+  for (const item of raw) {
+    const text = readText(item);
+    if (text !== undefined && !result.includes(text)) result.push(text);
+  }
+  return result;
+}
+
+/** A whole number of 0 or more, or undefined when it is missing or blank. */
+export function readNonNegativeInt(value: unknown): number | undefined {
+  if (value === undefined || value === "") return undefined;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new BadRequestError("invalid_experience");
+  }
+  return parsed;
+}
+
+/**
  * Resolves a sort key against an allowlist. The repository maps the same keys to
  * SQL, so this is where user input stops being able to name a column.
  */

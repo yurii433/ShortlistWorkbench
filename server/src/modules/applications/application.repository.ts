@@ -1,22 +1,52 @@
 import type { Queryable } from "../../db/queryable.js";
+import { FilterBuilder } from "../../db/filter-builder.js";
 import {
   toIsoDate,
   toIsoDateOrNull,
   toTextOrNull,
 } from "../../db/row-utils.js";
 import { pageOffset, sqlDirection } from "../../http/list-query.js";
-import type { Application, Status } from "../../types.js";
+import type { Application, MatchBand, Status } from "../../types.js";
 import type {
   ApplicationListQuery,
   ApplicationSortField,
 } from "./application.types.js";
 
-/** The only place a user-supplied sort key turns into a SQL expression. */
+/**
+ * The only place a user-supplied sort key turns into a SQL expression.
+ */
 const APPLICATION_SORT_SQL: Record<ApplicationSortField, string> = {
   match_score: "a.match_score",
   created_at: "a.created_at",
   score_disagreement: "ABS(a.llm_score - (a.match_score * 100))",
 };
+
+/** The query fields that are filter lists, i.e. every field but sort and paging. */
+type ApplicationFilterKey = {
+  [Key in keyof ApplicationListQuery]-?: ApplicationListQuery[Key] extends
+    | string[]
+    | undefined
+    ? Key
+    : never;
+}[keyof ApplicationListQuery];
+
+/**
+ * The same allowlist idea for filter keys: each one maps to a fixed column, so
+ * the loop below can never interpolate anything the caller sent. Candidate
+ * filters are prefixed with `c.` and job filters with `j.` on purpose — the
+ * workbench page filters candidates for a job it already knows.
+ */
+const APPLICATION_FILTER_COLUMNS = {
+  status: "a.status",
+  source: "a.source",
+  matchBand: "a.match_band",
+  jobId: "a.job_id",
+  country: "j.country",
+  jobFamily: "j.job_family",
+  candidateCountry: "c.country",
+  candidateCity: "c.city",
+  preferredJobFamily: "c.preferred_job_family",
+} as const satisfies Record<ApplicationFilterKey, string>;
 
 const APPLICATION_COLUMNS = `
   a.application_id,
@@ -70,7 +100,7 @@ function mapApplication(row: Record<string, unknown>): Application {
     created_at: toIsoDate(row.created_at),
     source: String(row.source),
     match_score: Number(row.match_score),
-    match_band: String(row.match_band),
+    match_band: String(row.match_band) as MatchBand,
     status: String(row.status) as Status,
     status_updated_at: toIsoDateOrNull(row.status_updated_at),
     recruiter_note: toTextOrNull(row.recruiter_note),
@@ -126,25 +156,21 @@ export function createApplicationRepository(
 ): ApplicationRepository {
   return {
     async list(query) {
-      const filters: string[] = [];
-      const values: unknown[] = [];
+      const filters = new FilterBuilder();
 
-      const filterBy = (column: string, value: string | undefined) => {
-        if (!value) return;
-        values.push(value);
-        filters.push(`${column} = $${values.length}`);
-      };
+      for (const [key, column] of Object.entries(APPLICATION_FILTER_COLUMNS)) {
+        filters.in(column, query[key as ApplicationFilterKey]);
+      }
+      filters.atLeast("c.years_experience", query.minExperience);
 
-      filterBy("a.status", query.status);
-      filterBy("j.country", query.country);
-      filterBy("j.job_family", query.jobFamily);
-      filterBy("a.job_id", query.jobId);
-
+      // Sorting by the gap between the two scores only makes sense for rows
+      // that have been scored, so the sort silently restricts the list.
       if (query.sort === "score_disagreement") {
-        filters.push("a.llm_score IS NOT NULL");
+        filters.isNotNull("a.llm_score");
       }
 
-      const where = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+      const where = filters.where();
+      const values = filters.params();
       const direction = sqlDirection(query.order);
 
       const countSql = `

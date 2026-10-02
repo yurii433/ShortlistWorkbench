@@ -1,34 +1,33 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchJobs } from "../api";
+import {
+  JOB_FILTER_DEFAULTS,
+  JOB_FILTER_PARAMS,
+  type JobFilterKey,
+} from "../jobFilters";
 import { JobFilters } from "../components/jobs/JobFilters";
 import { JobsList } from "../components/jobs/JobsList";
 import { pageCountOf, rangeLabel } from "../format";
 import { useListQuery } from "../hooks/useListQuery";
 import { useUrlQuery } from "../hooks/useUrlQuery";
 
-export type JobsQueryState = {
-  search: string;
-  country: string;
-  jobFamily: string;
+/** Filter values are lists, so both filter kinds share one state shape. */
+export type JobsQueryState = Record<JobFilterKey, string[]> & {
   sort: string;
   order: string;
   page: number;
 };
 
 const DEFAULTS: JobsQueryState = {
-  search: "",
-  country: "",
-  jobFamily: "",
+  ...JOB_FILTER_DEFAULTS,
   sort: "application_count",
   order: "desc",
   page: 1,
 };
 
 const PARAM_NAMES = {
-  search: "q",
-  country: "country",
-  jobFamily: "jobFamily",
+  ...JOB_FILTER_PARAMS,
   sort: "jobSort",
   order: "jobOrder",
   page: "jobPage",
