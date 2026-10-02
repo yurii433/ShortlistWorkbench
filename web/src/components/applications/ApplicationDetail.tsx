@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { fetchApplication, patchStatus, requestLlmScore } from "../../api";
 import type { Application, Status } from "../../domain";
 import { STATUSES, STATUS_LABELS } from "../../domain";
-import { toPercent } from "../../format";
+import { toDateTime, toPercent } from "../../format";
 import { ErrorState } from "../ui/ErrorState";
 import { StatusBadge } from "../ui/StatusBadge";
 
@@ -204,6 +204,11 @@ export function ApplicationDetail({ applicationId, onRowChange, onStatusSaved }:
             ))}
           </select>
         </div>
+        {detail.status_updated_at ? (
+          <p className="muted tiny">
+            Status last changed {toDateTime(detail.status_updated_at)}
+          </p>
+        ) : null}
         <NoteField
           detail={detail}
           onSave={(status, note) => void onStatusChange(status, note)}

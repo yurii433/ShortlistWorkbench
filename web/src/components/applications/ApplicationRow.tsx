@@ -40,6 +40,7 @@ export function ApplicationRow({ item, selected, onSelect }: Props) {
                   href={`?id=${encodeURIComponent(id)}`}
                   onClick={(event) => {
                     event.preventDefault();
+                    event.stopPropagation();
                     onSelect(id);
                   }}
                 >

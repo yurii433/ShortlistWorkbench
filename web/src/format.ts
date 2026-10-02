@@ -21,3 +21,20 @@ export function pageCountOf(total: number, pageSize: number): number {
 export function toPercent(score: number): number {
   return Math.round(score * 100);
 }
+
+/**
+ * A stored timestamp in the reader's locale, or "" when it was never set. The
+ * value is an ISO string produced by the API, so parsing is safe.
+ */
+export function toDateTime(value: string | null): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
