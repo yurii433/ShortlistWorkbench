@@ -60,7 +60,7 @@ export function WorkbenchPage() {
         minExperience: minExperienceOf(query.experience),
         pageSize: PAGE_SIZE,
       }),
-    [jobId, query],
+    [jobId, query.page, query.sort, query.order, query.experience],
   );
   const { items, total, loading, error, reload, setItems } = useListQuery(
     fetcher,
