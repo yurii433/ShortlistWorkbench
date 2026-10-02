@@ -153,6 +153,12 @@ export function ApplicationDetail({ applicationId, onRowChange, onStatusSaved }:
             label="Based in"
             value={`${detail.candidate.city}, ${detail.candidate.country}`}
           />
+          {detail.sibling_application_ids.length > 0 ? (
+            <Fact
+              label="Applications to this job"
+              value={String(detail.sibling_application_ids.length + 1)}
+            />
+          ) : null}
         </dl>
       </section>
 

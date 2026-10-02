@@ -49,6 +49,21 @@ export type Candidate = {
   preferred_job_family: string;
 };
 
+/**
+ * The candidate fields an application carries. Deliberately a separate type from
+ * `Candidate`: this is a read projection, not the entity, and the two are free
+ * to diverge as the candidate record grows (CV, consent, notes).
+ */
+export type ApplicationCandidate = {
+  candidate_id: string;
+  full_name: string;
+  email: string;
+  country: string;
+  city: string;
+  years_experience: number;
+  preferred_job_family: string;
+};
+
 /** A job plus its applicant counts per status, as shown on the jobs page. */
 export type JobWithCounts = Job & {
   application_count: number;
@@ -76,6 +91,12 @@ export type Application = {
   llm_reason: string | null;
   llm_scored_at: string | null;
   llm_model: string | null;
+  /**
+   * This candidate's other applications to the same job, excluding this one,
+   * newest first. Empty when they applied once, which is why the UI only shows a
+   * count or a link when this is non-empty.
+   */
+  sibling_application_ids: string[];
   job: Job;
-  candidate: Candidate;
+  candidate: ApplicationCandidate;
 };

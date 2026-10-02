@@ -29,13 +29,30 @@ web (React + Vite)  →  Express API  →  PostgreSQL
                               ↘ MatchScorer (mock | Anthropic Haiku)
 ```
 
-Each layer only does one job:
+The API is layered, one folder per feature under `server/src/modules`:
 
-- **`server/src/db`** — connection pool, schema reset, CSV seed.
-- **`server/src/http`** — request concerns shared by every route: query-string parsing and validation, async error forwarding, `400`/`404` bodies.
-- **`server/src/routes`** — HTTP only. Validate input, call the service, map the result to a status code. No SQL.
-- **`server/src/services`** — business logic and SQL. This is the only layer that touches the database.
-- **`server/src/services/llm`** — the `MatchScorer` interface plus its mock and Anthropic implementations, and the one validator for a model score.
+```
+Route  →  Handler  →  Service  →  Repository  →  PostgreSQL
+```
+
+| Layer          | Responsibility                          | Knows about            |
+| -------------- | --------------------------------------- | ---------------------- |
+| `.routes`      | URL + HTTP method + middleware wiring    | Express                |
+| `.handler`     | HTTP input/output                       | Express, service       |
+| `.schema`      | validates the shape of the request      | HTTP, feature types    |
+| `.service`     | business / use-case logic               | domain, repositories   |
+| `.repository`  | SQL and row mapping                     | PostgreSQL             |
+
+The tests hit a real database through `createApp`, so nothing below the HTTP layer knows that `req` and `res` exist. A service method could be called from a CLI or a background job unchanged.
+
+Around those modules:
+
+- **`server/src/app.ts`** — wires the layers together bottom up: pool → repositories → services → handlers → routers. `createApp(pool, scorer)` takes both as arguments, which is how the tests point the whole app at their own database.
+- **`server/src/errors.ts`** — `BadRequestError`, `NotFoundError`, `BadGatewayError`. Services raise them; `error-handler` is the only place that turns one into a status code.
+- **`server/src/http`** — request concerns shared by every route: query-string parsing and validation, async error forwarding, and the single error → response mapping.
+- **`server/src/db`** — connection pool, migrations in `db/migrations/*.sql`, CSV seed in `db/seed`.
+- **`server/src/llm.ts`** — the `MatchScorer` mock and Anthropic implementations, plus the one validator for a model score.
+- **`server/src/types.ts`** — the domain vocabulary (`Status`, `Job`, `Candidate`, `Application`) the layers share.
 - **`web/src/domain.ts`** — types and vocabulary (`Status`, `Job`, `Application`) shared by the UI.
 - **`web/src/api.ts`** — transport only.
 - **`web/src/pages`, `web/src/components`** — UI.
@@ -46,6 +63,7 @@ Each layer only does one job:
 - **The candidate list is always scoped to one job** (`/job/:jobId`). The job title, location, family, and seniority head the page; a "← All jobs" link goes back.
 - **Filters, sort, and pagination run in SQL**, not in the browser. The job list filters on country, job family, and a title/city search. The candidate list filters on application status. Both reset to page 1 when a filter changes, so you never land on an out-of-range page.
 - Default candidate sort is match score high → low.
+- **Every application is kept, even when the same candidate applies to the same job twice.** Nothing is deduplicated or hidden. Each application carries `sibling_application_ids` — that candidate's *other* applications to that same job, newest first. It is empty for a single application, and the row then shows nothing extra. When it is not empty the row grows a "2 applications" badge plus an **also applied as** link to each sibling, so the recruiter can jump straight across instead of hunting for a matching name. The siblings are resolved in SQL and deliberately **not** narrowed by the active filters, so the link still works while you filter by status or sit on another page.
 - Detail is a **side panel**. Changing status updates the selected row without losing list position (optimistic update, rollback on failure).
 - Routes, filters, and pagination live in the URL, so a job's candidate list can be reloaded or shared.
 - `POST /applications/:id/llm-score` scores **on demand**. The result is stored on the application. Opening the same application again, or posting again, does **not** call the model a second time.
@@ -66,6 +84,8 @@ If a live call fails or returns invalid JSON, the API responds `502` with `{ "er
 
 The list and detail endpoints return the **same** application shape, so the UI has one type to render. Filtering, sorting, and paging all happen in SQL.
 
+Every application object — list, detail, PATCH, and LLM score alike — carries `sibling_application_ids`: the ids of that candidate's other applications to the same job, newest first, excluding the row itself. It is `[]` when they applied once. `total` stays a count of applications, because duplicates are preserved rather than collapsed.
+
 `score_disagreement` only includes applications that already have an LLM score, ordered by `abs(llm_score - match_score * 100)`.
 
 ## Tests
@@ -74,11 +94,14 @@ The list and detail endpoints return the **same** application shape, so the UI h
 npm test
 ```
 
-Needs Compose Postgres up (uses database `shortlist_test` on port 5433). Covers list filtering, sorting, pagination and per-job scoping; parameter validation; status updates (including note preservation); the LLM cache, its invalid-payload guard and the disagreement sort; and the jobs list with its counts.
+Needs Compose Postgres up (uses database `shortlist_test` on port 5433). Covers list filtering, sorting, pagination and per-job scoping; parameter validation; status updates (including note preservation); repeat applications and their sibling links across filters; the LLM cache, its invalid-payload guard and the disagreement sort; and the jobs list with its counts.
 
 ## Assumptions
 
 - List `country` / `jobFamily` on `/applications` refer to the job, not the candidate. The candidate list is scoped to one job, so the UI only exposes the status filter; both filters are still available to any other API client.
+- A candidate may hold several applications to the same job. The schema has no `UNIQUE (job_id, candidate_id)`, and `csv_data/applications.csv` really does contain such pairs, so this is a live case rather than a hypothetical. All of them are stored and listed; the UI links the repeats together instead of collapsing them.
+- `sibling_application_ids` is scoped per job: a candidate with three applications to three *different* jobs has no siblings on any of them.
+- `application_count` on a job row counts applications, so a job with a repeat applicant reports more applications than distinct people.
 - Any status change (including back to `new`) sets `status_updated_at`.
 - A PATCH without `status` is a `400`, even if it only wants to set a note.
 - Seed is wipe-and-reload, not incremental.

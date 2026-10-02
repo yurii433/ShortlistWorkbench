@@ -8,21 +8,6 @@ export const STATUSES = [
 
 export type Status = (typeof STATUSES)[number];
 
-export const APPLICATION_SORT_FIELDS = [
-  "match_score",
-  "created_at",
-  "score_disagreement",
-] as const;
-
-export const JOB_SORT_FIELDS = [
-  "created_at",
-  "title",
-  "application_count",
-] as const;
-
-export type ApplicationSortField = (typeof APPLICATION_SORT_FIELDS)[number];
-export type JobSortField = (typeof JOB_SORT_FIELDS)[number];
-
 export type Job = {
   job_id: string;
   title: string;
@@ -34,6 +19,22 @@ export type Job = {
 };
 
 export type Candidate = {
+  candidate_id: string;
+  full_name: string;
+  email: string;
+  country: string;
+  city: string;
+  years_experience: number;
+  preferred_job_family: string;
+};
+
+/**
+ * The candidate fields an application carries. Deliberately a separate type from
+ * `Candidate`: this is a read projection, not the entity, and the two are free
+ * to diverge as the candidate record grows (CV, consent, notes). Keep it a
+ * standalone declaration rather than a `Pick` so nothing re-ties them.
+ */
+export type ApplicationCandidate = {
   candidate_id: string;
   full_name: string;
   email: string;
@@ -65,8 +66,14 @@ export type Application = {
   llm_reason: string | null;
   llm_scored_at: string | null;
   llm_model: string | null;
+  /**
+   * This candidate's other applications to the same job, excluding this one,
+   * newest first. Empty when they applied once. Deliberately independent of any
+   * active filter, so the signal survives sorting and paging.
+   */
+  sibling_application_ids: string[];
   job: Job;
-  candidate: Candidate;
+  candidate: ApplicationCandidate;
 };
 
 export type LlmScore = {
@@ -79,26 +86,12 @@ export type MatchScorer = {
   score(input: { job: Job; candidate: Candidate }): Promise<LlmScore>;
 };
 
-export type ListQuery = {
-  status?: string;
-  country?: string;
-  jobFamily?: string;
-  jobId?: string;
-  search?: string;
-  sort: ApplicationSortField;
-  order: "asc" | "desc";
+/** The envelope every list endpoint returns. */
+export type ListResult<T> = {
+  items: T[];
   page: number;
   pageSize: number;
-};
-
-export type JobListQuery = {
-  country?: string;
-  jobFamily?: string;
-  search?: string;
-  sort: JobSortField;
-  order: "asc" | "desc";
-  page: number;
-  pageSize: number;
+  total: number;
 };
 
 export function isStatus(value: string): value is Status {

@@ -9,6 +9,9 @@ type Props = {
 };
 
 export function ApplicationRow({ item, selected, onSelect }: Props) {
+  const siblings = item.sibling_application_ids;
+  const repeated = siblings.length > 0;
+
   return (
     <tr
       className={selected ? "selected" : undefined}
@@ -16,9 +19,36 @@ export function ApplicationRow({ item, selected, onSelect }: Props) {
     >
       <td>
         <strong>{item.candidate.full_name}</strong>
+        {repeated ? (
+          <span
+            className="badge badge-duplicate"
+            title="Applied to this job more than once"
+          >
+            {siblings.length + 1} applications
+          </span>
+        ) : null}
         <div className="tiny muted">
           {item.application_id} · {item.source}
         </div>
+        {repeated ? (
+          <div className="tiny duplicate-links">
+            also applied as{" "}
+            {siblings.map((id, index) => (
+              <span key={id}>
+                {index > 0 ? ", " : null}
+                <a
+                  href={`?id=${encodeURIComponent(id)}`}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onSelect(id);
+                  }}
+                >
+                  {id}
+                </a>
+              </span>
+            ))}
+          </div>
+        ) : null}
       </td>
       <td>{toPercent(item.match_score)}</td>
       <td>{item.llm_score ?? "—"}</td>

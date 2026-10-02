@@ -1,17 +1,12 @@
-import pg from "pg";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "csv-parse/sync";
-import { config } from "./config.js";
-
-const { Pool } = pg;
-
-export const pool = new Pool({ connectionString: config.databaseUrl });
+import type { PoolClient } from "pg";
 
 const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  "../..",
+  "../../../..",
 );
 const dataDir = path.join(root, "csv_data");
 
@@ -28,7 +23,8 @@ function emptyToNull(value: string): string | null {
   return value === "" ? null : value;
 }
 
-export async function seedFromCsv(client: pg.PoolClient): Promise<void> {
+/** Wipe-and-reload from `csv_data/*.csv`, inside the caller's transaction. */
+export async function seedFromCsv(client: PoolClient): Promise<void> {
   const jobs = readCsv("jobs.csv");
   const candidates = readCsv("candidates.csv");
   const applications = readCsv("applications.csv");
@@ -84,40 +80,4 @@ export async function seedFromCsv(client: pg.PoolClient): Promise<void> {
       ],
     );
   }
-}
-
-const schemaPath = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../../../db/schema.sql",
-);
-
-export async function reset(): Promise<void> {
-  const schema = fs.readFileSync(schemaPath, "utf8");
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    await client.query(schema);
-    await seedFromCsv(client);
-    await client.query("COMMIT");
-    const counts = await client.query(`
-      SELECT
-        (SELECT COUNT(*)::int FROM jobs) AS jobs,
-        (SELECT COUNT(*)::int FROM candidates) AS candidates,
-        (SELECT COUNT(*)::int FROM applications) AS applications
-    `);
-    console.log("Database reset complete:", counts.rows[0]);
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-    await pool.end();
-  }
-}
-
-if (import.meta.url === `file://${process.argv[1]}`) {
-  reset().catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
 }

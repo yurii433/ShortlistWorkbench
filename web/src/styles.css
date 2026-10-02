@@ -282,6 +282,21 @@ tbody tr.selected {
 .badge-hired {
   background: #d9ead3;
 }
+/* Applied more than once to the same job. */
+.badge-duplicate {
+  background: #f6e2c3;
+  margin-left: 0.4rem;
+}
+.duplicate-links {
+  color: var(--muted);
+}
+.duplicate-links a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.duplicate-links a:hover {
+  text-decoration: none;
+}
 
 .error {
   color: #9b2c2c;

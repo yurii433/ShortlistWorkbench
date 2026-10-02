@@ -98,6 +98,68 @@ describe("applications API", () => {
   });
 });
 
+describe("repeated applications", () => {
+  /** The list-row fields the repeat-applications assertions care about. */
+  type ListedApplication = {
+    application_id: string;
+    candidate: { candidate_id: string };
+    sibling_application_ids: string[];
+  };
+
+  // C1 already has A1 on J-DE-LOG; a second one makes the candidate repeat.
+  async function addSecondApplicationForC1(): Promise<void> {
+    await pool.query(`
+      INSERT INTO applications (
+        application_id, job_id, candidate_id, created_at, source, match_score, match_band, status
+      ) VALUES ('A7', 'J-DE-LOG', 'C1', '2026-01-07 10:00', 'career_site', 0.800, 'high', 'rejected')
+    `);
+  }
+
+  it("links each repeat application to the others for the same candidate and job", async () => {
+    await addSecondApplicationForC1();
+
+    const response = await request(app).get("/applications").query({ jobId: "J-DE-LOG" });
+
+    // J-DE-LOG holds A1, A2, A6 and the new A7: every application is kept.
+    expect(response.body.total).toBe(4);
+    expect(response.body.items).toHaveLength(4);
+
+    const byId = Object.fromEntries(
+      response.body.items.map((item: ListedApplication) => [item.application_id, item]),
+    ) as Record<string, ListedApplication>;
+
+    // C1 applied twice, so each of its rows points at the other one.
+    expect(byId["A1"].candidate.candidate_id).toBe("C1");
+    expect(byId["A1"].sibling_application_ids).toEqual(["A7"]);
+    expect(byId["A7"].sibling_application_ids).toEqual(["A1"]);
+
+    // C2 and C3 applied once each, so they carry no siblings at all.
+    expect(byId["A2"].sibling_application_ids).toEqual([]);
+    expect(byId["A6"].sibling_application_ids).toEqual([]);
+  });
+
+  it("lists repeat applications across a filter that hides them", async () => {
+    await addSecondApplicationForC1();
+
+    // A1 is `new` and filtered out here, but A7 must still point back to it.
+    const response = await request(app)
+      .get("/applications")
+      .query({ jobId: "J-DE-LOG", status: "rejected" });
+
+    expect(response.body.total).toBe(1);
+    expect(response.body.items[0].application_id).toBe("A7");
+    expect(response.body.items[0].sibling_application_ids).toEqual(["A1"]);
+  });
+
+  it("reports the siblings on the detail endpoint too", async () => {
+    await addSecondApplicationForC1();
+
+    const response = await request(app).get("/applications/A1");
+    expect(response.status).toBe(200);
+    expect(response.body.sibling_application_ids).toEqual(["A7"]);
+  });
+});
+
 describe("status updates", () => {
   it("updates status and status_updated_at", async () => {
     const patched = await request(app)

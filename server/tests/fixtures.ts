@@ -1,13 +1,6 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { applyMigrations } from "../src/db/migrate.js";
 import type { Candidate, Job, LlmScore, MatchScorer } from "../src/types.js";
-
-const schemaPath = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../../db/schema.sql",
-);
 
 /** The Compose Postgres from docker-compose.yml, test database. */
 export const testUrl =
@@ -18,7 +11,7 @@ export const pool = new pg.Pool({ connectionString: testUrl });
 
 /** Creates a fresh schema once per test file. */
 export async function applySchema(): Promise<void> {
-  await pool.query(fs.readFileSync(schemaPath, "utf8"));
+  await applyMigrations(pool);
 }
 
 export async function resetFixtures(): Promise<void> {

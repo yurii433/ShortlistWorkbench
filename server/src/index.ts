@@ -1,11 +1,11 @@
 import { createApp } from "./app.js";
 import { config } from "./config.js";
-import { pool, reset } from "./db.js";
-import { scoreWithLlm, mockScorer } from "./llm.js";
+import { pool } from "./db/pool.js";
+import { ANTHROPIC_MODEL, mockScorer, scoreWithLlm } from "./llm.js";
 import type { Job, Candidate, LlmScore } from "./types.js";
 
 const liveScorer = {
-  model: "claude-haiku-4-5",
+  model: ANTHROPIC_MODEL,
   async score(input: { job: Job; candidate: Candidate }): Promise<LlmScore> {
     return scoreWithLlm(input.job, input.candidate);
   },
