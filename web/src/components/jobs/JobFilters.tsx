@@ -1,5 +1,5 @@
-import { COUNTRIES, JOB_FAMILIES } from "../domain";
-import type { JobsQueryState } from "../pages/useJobsQuery";
+import { COUNTRIES, JOB_FAMILIES } from "../../domain";
+import type { JobsQueryState } from "../../pages/JobsPage";
 
 type Props = {
   query: JobsQueryState;

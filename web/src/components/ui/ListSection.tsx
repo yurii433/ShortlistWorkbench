@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { ListView } from "../useListQuery";
+import type { ListView } from "../../hooks/useListQuery";
 import { ErrorState } from "./ErrorState";
 import { SkeletonTable } from "./SkeletonTable";
 

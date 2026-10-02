@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type React from "react";
-import type { ListResponse } from "./api";
+import type { ListResponse } from "../api";
 
 /** The subset a list view needs; `setItems` stays with the page that mutates rows. */
 export type ListView<T> = Pick<

@@ -1,5 +1,5 @@
-import { STATUSES, STATUS_LABELS } from "../domain";
-import type { ApplicationsQueryState } from "../pages/useApplicationsQuery";
+import { STATUSES, STATUS_LABELS } from "../../domain";
+import type { ApplicationsQueryState } from "../../pages/WorkbenchPage";
 
 type Props = {
   query: ApplicationsQueryState;
