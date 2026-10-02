@@ -52,15 +52,39 @@ export function WorkbenchPage() {
 
   const { query, setQuery } = useUrlQuery(DEFAULTS, PARAM_NAMES);
 
+  const filterPayload = JSON.stringify({
+    status: query.status,
+    source: query.source,
+    matchBand: query.matchBand,
+    candidateCountry: query.candidateCountry,
+    candidateCity: query.candidateCity,
+    preferredJobFamily: query.preferredJobFamily,
+  });
+
   const fetcher = useCallback(
     () =>
       fetchApplications({
-        ...query,
         jobId: jobId ?? "",
         minExperience: minExperienceOf(query.experience),
         pageSize: PAGE_SIZE,
+        sort: query.sort,
+        order: query.order,
+        page: query.page,
+        status: query.status,
+        source: query.source,
+        matchBand: query.matchBand,
+        candidateCountry: query.candidateCountry,
+        candidateCity: query.candidateCity,
+        preferredJobFamily: query.preferredJobFamily,
       }),
-    [jobId, query.page, query.sort, query.order, query.experience],
+    [
+      jobId,
+      query.page,
+      query.sort,
+      query.order,
+      query.experience,
+      filterPayload,
+    ],
   );
   const { items, total, loading, error, reload, setItems } = useListQuery(
     fetcher,
@@ -127,9 +151,10 @@ export function WorkbenchPage() {
 
       {jobError ? <p className="error">{jobError}</p> : null}
 
-      <ApplicationFilters query={query} onChange={setQuery} />
-
       <div className="workbench">
+        <aside className="sidebar">
+          <ApplicationFilters query={query} onChange={setQuery} />
+        </aside>
         <ApplicationsList
           state={{ items, loading, error, reload }}
           sort={query.sort}

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { FilterField, SortOption } from "../../filterTypes";
 import { FilterGroup } from "./FilterGroup";
 import { FilterSelect } from "./FilterSelect";
@@ -35,8 +34,6 @@ export function FilterBar<S extends object>({
   onSort,
   sortOptions,
 }: Props<S>) {
-  const [open, setOpen] = useState(false);
-
   const entries = Object.entries(fields);
   const activeCount = entries.reduce((total, [key]) => {
     const value = state[key as keyof S];
@@ -46,14 +43,6 @@ export function FilterBar<S extends object>({
   return (
     <div className="filter-bar">
       <div className="filter-bar-head">
-        <button
-          type="button"
-          className="filter-toggle"
-          aria-expanded={open}
-          onClick={() => setOpen((isOpen) => !isOpen)}
-        >
-          Filters{activeCount > 0 ? ` · ${activeCount} active` : ""}
-        </button>
         {activeCount > 0 ? (
           <button type="button" className="link-button" onClick={onClear}>
             Clear all
@@ -67,20 +56,18 @@ export function FilterBar<S extends object>({
         />
       </div>
 
-      {open ? (
-        <div className="filter-grid">
-          {entries.map(([key, field]) => (
-            <FilterControl
-              key={key}
-              field={field}
-              selected={state[key as keyof S] as string[]}
-              // A computed key over a union of keys widens to `{[k: string]: …}`,
-              // so this is the one place the patch needs a cast.
-              onChange={(next) => onChange({ [key]: next } as Partial<S>)}
-            />
-          ))}
-        </div>
-      ) : null}
+      <div className="filter-grid">
+        {entries.map(([key, field]) => (
+          <FilterControl
+            key={key}
+            field={field}
+            selected={state[key as keyof S] as string[]}
+            // A computed key over a union of keys widens to `{[k: string]: …}`,
+            // so this is the one place the patch needs a cast.
+            onChange={(next) => onChange({ [key]: next } as Partial<S>)}
+          />
+        ))}
+      </div>
     </div>
   );
 }
