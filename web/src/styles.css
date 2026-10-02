@@ -188,6 +188,10 @@ input[type="search"] {
   align-items: start;
 }
 
+.workbench--selected {
+  grid-template-columns: 280px minmax(0, 1.25fr) minmax(0, 1fr);
+}
+
 .sidebar {
   display: flex;
   flex-direction: column;
@@ -206,6 +210,16 @@ input[type="search"] {
 .list-pane {
   display: flex;
   flex-direction: column;
+}
+
+.list-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.6rem;
+}
+
+.list-toolbar .sort-field {
+  margin-left: 0;
 }
 
 .list-body {
@@ -267,8 +281,34 @@ tbody tr.selected {
 .panel-header {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 0.75rem;
   margin-bottom: 1rem;
+}
+
+.panel-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.panel-state-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.panel-close {
+  width: 1rem;
+  height: 1rem;
+  place-items: center;
+  padding: 0;
+
+  background: transparent;
+  color: var(--ink);
+  font-size: 1.25rem;
+  line-height: 1;
 }
 
 .job-title {
@@ -368,6 +408,7 @@ tbody tr.selected {
 @media (max-width: 900px) {
   .filter-grid,
   .workbench,
+  .workbench--selected,
   .scores,
   .facts {
     grid-template-columns: 1fr;

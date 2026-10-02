@@ -14,7 +14,6 @@ type Props = {
 export function SortSelect({ value, order, options, onChange }: Props) {
   return (
     <label className="filter-field sort-field">
-      Sort
       <select
         value={`${value}:${order}`}
         onChange={(event) => {

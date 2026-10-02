@@ -1,7 +1,6 @@
 import {
   APPLICATION_FILTERS,
   APPLICATION_FILTER_DEFAULTS,
-  APPLICATION_SORT_OPTIONS,
 } from "../../applicationFilters";
 import type { ApplicationsQueryState } from "../../pages/WorkbenchPage";
 import { FilterBar } from "../ui/FilterBar";
@@ -23,10 +22,6 @@ export function ApplicationFilters({ query, onChange }: Props) {
       state={query}
       onChange={(patch) => onChange({ ...patch, page: 1 })}
       onClear={() => onChange({ ...APPLICATION_FILTER_DEFAULTS, page: 1 })}
-      sort={query.sort}
-      order={query.order}
-      onSort={(sort, order) => onChange({ sort, order, page: 1 })}
-      sortOptions={APPLICATION_SORT_OPTIONS}
     />
   );
 }

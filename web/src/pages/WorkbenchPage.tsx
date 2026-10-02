@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { fetchApplications, fetchJob } from "../api";
 import {
   APPLICATION_FILTER_DEFAULTS,
@@ -49,8 +49,15 @@ const ERROR_MESSAGE = "Could not load applications. Is the API running?";
 export function WorkbenchPage() {
   const { jobId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { query, setQuery } = useUrlQuery(DEFAULTS, PARAM_NAMES);
+
+  const closeApplication = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete(PARAM_NAMES.id);
+    setSearchParams(nextParams);
+  };
 
   const filterPayload = JSON.stringify({
     status: query.status,
@@ -151,13 +158,15 @@ export function WorkbenchPage() {
 
       {jobError ? <p className="error">{jobError}</p> : null}
 
-      <div className="workbench">
+      <div className={`workbench${query.id ? " workbench--selected" : ""}`}>
         <aside className="sidebar">
           <ApplicationFilters query={query} onChange={setQuery} />
         </aside>
         <ApplicationsList
           state={{ items, loading, error, reload }}
           sort={query.sort}
+          order={query.order}
+          onSort={(sort, order) => setQuery({ sort, order, page: 1 })}
           page={query.page}
           pageCount={pageCountOf(total, PAGE_SIZE)}
           onPage={(page) => setQuery({ page })}
@@ -165,11 +174,14 @@ export function WorkbenchPage() {
           onSelect={(id) => setQuery({ id })}
         />
 
-        <ApplicationDetail
-          applicationId={query.id}
-          onRowChange={onRowChange}
-          onStatusSaved={() => jobId && void loadJob(jobId)}
-        />
+        {query.id ? (
+          <ApplicationDetail
+            applicationId={query.id}
+            onRowChange={onRowChange}
+            onStatusSaved={() => jobId && void loadJob(jobId)}
+            onClose={closeApplication}
+          />
+        ) : null}
       </div>
     </div>
   );

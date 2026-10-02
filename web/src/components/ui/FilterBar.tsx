@@ -11,10 +11,10 @@ type Props<S extends object> = {
   state: S;
   onChange: (patch: Partial<S>) => void;
   onClear: () => void;
-  sort: string;
-  order: string;
-  onSort: (sort: string, order: string) => void;
-  sortOptions: readonly SortOption[];
+  sort?: string;
+  order?: string;
+  onSort?: (sort: string, order: string) => void;
+  sortOptions?: readonly SortOption[];
 };
 
 /**
@@ -48,12 +48,17 @@ export function FilterBar<S extends object>({
             Clear all
           </button>
         ) : null}
-        <SortSelect
-          value={sort}
-          order={order}
-          options={sortOptions}
-          onChange={onSort}
-        />
+        {sort !== undefined &&
+        order !== undefined &&
+        onSort &&
+        sortOptions ? (
+          <SortSelect
+            value={sort}
+            order={order}
+            options={sortOptions}
+            onChange={onSort}
+          />
+        ) : null}
       </div>
 
       <div className="filter-grid">

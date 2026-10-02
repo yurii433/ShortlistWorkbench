@@ -1,7 +1,9 @@
 import type { Application } from "../../domain";
 import type { ListView } from "../../hooks/useListQuery";
+import { APPLICATION_SORT_OPTIONS } from "../../applicationFilters";
 import { ListSection } from "../ui/ListSection";
 import { Pager } from "../ui/Pager";
+import { SortSelect } from "../ui/SortSelect";
 import { ApplicationRow } from "./ApplicationRow";
 
 const COLUMNS = ["Candidate", "Match", "LLM", "Status"];
@@ -14,6 +16,8 @@ const EMPTY_MESSAGES: Record<string, string> = {
 type Props = {
   state: ListView<Application>;
   sort: string;
+  order: string;
+  onSort: (sort: string, order: string) => void;
   page: number;
   pageCount: number;
   onPage: (page: number) => void;
@@ -24,6 +28,8 @@ type Props = {
 export function ApplicationsList({
   state,
   sort,
+  order,
+  onSort,
   page,
   pageCount,
   onPage,
@@ -32,6 +38,14 @@ export function ApplicationsList({
 }: Props) {
   return (
     <section className="list-pane">
+      <div className="list-toolbar">
+        <SortSelect
+          value={sort}
+          order={order}
+          options={APPLICATION_SORT_OPTIONS}
+          onChange={onSort}
+        />
+      </div>
       <div className="list-body">
         <ListSection
           state={state}

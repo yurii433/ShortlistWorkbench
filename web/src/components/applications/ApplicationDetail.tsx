@@ -13,6 +13,8 @@ type Props = {
   onRowChange: (application: Application) => void;
   /** A confirmed status change: lets the page refresh its header counts. */
   onStatusSaved: () => void;
+  /** Closes the panel without changing the rest of the current query. */
+  onClose: () => void;
 };
 
 /**
@@ -20,7 +22,12 @@ type Props = {
  * showing it, and the status / LLM actions. It tells the page about saved
  * changes so the row behind it and the header counts stay in sync.
  */
-export function ApplicationDetail({ applicationId, onRowChange, onStatusSaved }: Props) {
+export function ApplicationDetail({
+  applicationId,
+  onRowChange,
+  onStatusSaved,
+  onClose,
+}: Props) {
   const [detail, setDetail] = useState<Application | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +100,9 @@ export function ApplicationDetail({ applicationId, onRowChange, onStatusSaved }:
   if (loading) {
     return (
       <aside className="panel">
+        <div className="panel-state-actions">
+          <CloseButton onClose={onClose} />
+        </div>
         <p className="muted">Loading application…</p>
       </aside>
     );
@@ -100,6 +110,9 @@ export function ApplicationDetail({ applicationId, onRowChange, onStatusSaved }:
   if (error) {
     return (
       <aside className="panel">
+        <div className="panel-state-actions">
+          <CloseButton onClose={onClose} />
+        </div>
         <ErrorState
           message={error}
           onRetry={() => applicationId && void loadDetail(applicationId)}
@@ -110,6 +123,11 @@ export function ApplicationDetail({ applicationId, onRowChange, onStatusSaved }:
   if (!detail) {
     return (
       <aside className="panel empty-panel">
+        {applicationId ? (
+          <div className="panel-state-actions">
+            <CloseButton onClose={onClose} />
+          </div>
+        ) : null}
         <h2>Select an application</h2>
         <p>Open a row to see the candidate, job, and match scores.</p>
       </aside>
@@ -124,7 +142,10 @@ export function ApplicationDetail({ applicationId, onRowChange, onStatusSaved }:
           <h2>{detail.candidate.full_name}</h2>
           <p className="muted">{detail.candidate.email}</p>
         </div>
-        <StatusBadge status={detail.status} />
+        <div className="panel-actions">
+          <StatusBadge status={detail.status} />
+          <CloseButton onClose={onClose} />
+        </div>
       </header>
 
       <section>
@@ -219,6 +240,19 @@ export function ApplicationDetail({ applicationId, onRowChange, onStatusSaved }:
         />
       </section>
     </aside>
+  );
+}
+
+function CloseButton({ onClose }: { onClose: () => void }) {
+  return (
+    <button
+      type="button"
+      className="panel-close"
+      aria-label="Close application details"
+      onClick={onClose}
+    >
+      ×
+    </button>
   );
 }
 
