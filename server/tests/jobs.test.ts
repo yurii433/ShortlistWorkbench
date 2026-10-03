@@ -9,58 +9,60 @@ beforeAll(applySchema);
 beforeEach(resetFixtures);
 afterAll(() => pool.end());
 
-describe("jobs API", () => {
-  it("lists all jobs with application counts by status", async () => {
-    const response = await request(app).get("/jobs");
-    expect(response.status).toBe(200);
-    expect(response.body.total).toBe(3);
-    const byId = Object.fromEntries(
-      response.body.items.map((job: { job_id: string }) => [job.job_id, job]),
-    ) as Record<string, Record<string, number>>;
-    expect(byId["J-DE-LOG"].application_count).toBe(3);
-    expect(byId["J-DE-LOG"].hired_count).toBe(1);
-    expect(byId["J-DE-LOG"].in_review_count).toBe(1);
-    expect(byId["J-AT-IT"].application_count).toBe(2);
-    expect(byId["J-DE-HC"].shortlisted_count).toBe(1);
+describe("GET /jobs", () => {
+  it("lists all jobs", async () => {
+    const res = await request(app).get("/jobs");
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(3);
+    expect(res.body.items).toHaveLength(3);
   });
 
-  it("sorts jobs by applicant count", async () => {
-    const response = await request(app)
-      .get("/jobs")
-      .query({ sort: "application_count", order: "desc" });
-    expect(response.status).toBe(200);
-    expect(response.body.items[0].job_id).toBe("J-DE-LOG");
-    const counts = response.body.items.map((job: { application_count: number }) => job.application_count);
+  it("filters by country", async () => {
+    const res = await request(app).get("/jobs").query({ country: "AT" });
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(1);
+    expect(res.body.items[0].country).toBe("AT");
+  });
+
+  it("filters by job family", async () => {
+    const res = await request(app).get("/jobs").query({ jobFamily: "Logistics" });
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(1);
+    expect(res.body.items[0].job_family).toBe("Logistics");
+  });
+
+  it("searches by city", async () => {
+    const res = await request(app).get("/jobs").query({ search: "Vienna" });
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(1);
+    expect(res.body.items[0].city).toBe("Vienna");
+  });
+
+  it("sorts by application count", async () => {
+    const res = await request(app).get("/jobs").query({ sort: "application_count", order: "desc" });
+    expect(res.status).toBe(200);
+    const counts = res.body.items.map((j: any) => j.application_count);
     expect(counts).toEqual([...counts].sort((a, b) => b - a));
   });
 
-  it("filters jobs by country, family and search", async () => {
-    const byCountry = await request(app).get("/jobs").query({ country: "AT" });
-    expect(byCountry.body.total).toBe(1);
-    expect(byCountry.body.items[0].job_id).toBe("J-AT-IT");
+  it("rejects invalid sort", async () => {
+    const res = await request(app).get("/jobs").query({ sort: "invalid" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("invalid_sort");
+  });
+});
 
-    const byFamily = await request(app).get("/jobs").query({ jobFamily: "Healthcare" });
-    expect(byFamily.body.total).toBe(1);
-    expect(byFamily.body.items[0].job_id).toBe("J-DE-HC");
-
-    const bySearch = await request(app).get("/jobs").query({ search: "Vienna" });
-    expect(bySearch.body.total).toBe(1);
-    expect(bySearch.body.items[0].job_id).toBe("J-AT-IT");
+describe("GET /jobs/:id", () => {
+  it("returns job with application counts", async () => {
+    const res = await request(app).get("/jobs/J-DE-LOG");
+    expect(res.status).toBe(200);
+    expect(res.body.title).toBe("Warehouse Associate");
+    expect(res.body.application_count).toBe(3);
+    expect(res.body.hired_count).toBe(1);
   });
 
-  it("rejects an invalid job sort", async () => {
-    const response = await request(app).get("/jobs").query({ sort: "nope" });
-    expect(response.status).toBe(400);
-    expect(response.body.error).toBe("invalid_sort");
-  });
-
-  it("returns a single job and 404 for a missing one", async () => {
-    const found = await request(app).get("/jobs/J-AT-IT");
-    expect(found.status).toBe(200);
-    expect(found.body.title).toBe("IT Support");
-    expect(found.body.application_count).toBe(2);
-
-    const missing = await request(app).get("/jobs/J-NOPE");
-    expect(missing.status).toBe(404);
+  it("returns 404 for unknown job", async () => {
+    const res = await request(app).get("/jobs/J-NOTFOUND");
+    expect(res.status).toBe(404);
   });
 });

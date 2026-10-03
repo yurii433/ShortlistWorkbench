@@ -191,7 +191,7 @@ export function ApplicationDetail({
             <>
               <p className="score-value">{detail.llm_score}</p>
               <p className="muted">{detail.llm_reason}</p>
-              <p className="muted tiny">Cached · {detail.llm_model}</p>
+              <p className="muted tiny">LLM · {detail.llm_model}</p>
             </>
           ) : (
             <>
