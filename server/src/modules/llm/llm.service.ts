@@ -1,20 +1,7 @@
-import { OpenRouter } from "@openrouter/sdk";
-
 import { config } from "../../config.js";
 import type { Candidate, Job, LlmScoreWithModel } from "../../types.js";
-import { systemPrompt } from "./prompt.js";
-
 export const LLM_SCORE_MIN = 0;
 export const LLM_SCORE_MAX = 100;
-
-function hashIds(jobId: string, candidateId: string): number {
-  const text = `${jobId}:${candidateId}`;
-  let sum = 0;
-  for (const char of text) {
-    sum = (sum + char.charCodeAt(0) * 17) % 101;
-  }
-  return sum;
-}
 
 export function parseLlmScore(
   response: unknown,
@@ -58,11 +45,11 @@ export function parseLlmScore(
   return { score, reason };
 }
 
-async function scoreWithMock(
+export async function scoreWithMock(
   job: Job,
   candidate: Candidate,
 ): Promise<LlmScoreWithModel> {
-  const score = hashIds(job.job_id, candidate.candidate_id);
+  const score = Math.random() * (LLM_SCORE_MAX - LLM_SCORE_MIN) + LLM_SCORE_MIN;
   return {
     score,
     reason: `Stub fit of ${score}/100 for ${candidate.full_name} on ${job.title} in ${job.city}.`,
@@ -70,34 +57,7 @@ async function scoreWithMock(
   };
 }
 
-async function scoreWithLLM(userContent: any): Promise<LlmScoreWithModel> {
-  const client = new OpenRouter({ apiKey: config.openRouterApiKey });
-
-  const completion = await client.chat.send({
-    chatRequest: {
-      model: "openrouter/auto",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userContent },
-      ],
-    },
-  });
-
-  if (completion instanceof ReadableStream) {
-    throw new Error("Expected a non-streaming response");
-  }
-
-  if (!completion.choices[0].message.content) {
-    throw new Error("Non expected LLM response: no content to parse");
-  }
-
-  return {
-    ...parseLlmScore(completion.choices[0].message.content),
-    model: completion.model || "openrouter/auto",
-  };
-}
-
-function buildUserContent(job: Job, candidate: Candidate): string {
+export function buildUserContent(job: Job, candidate: Candidate): string {
   return `
       ### Job
       ID: ${job.job_id}
@@ -111,17 +71,4 @@ function buildUserContent(job: Job, candidate: Candidate): string {
       Preferred Family: ${candidate.preferred_job_family}
       Years Experience: ${candidate.years_experience}
       Location: ${candidate.city}, ${candidate.country}`;
-}
-
-export async function scoreCandidate(
-  job: Job,
-  candidate: Candidate,
-): Promise<LlmScoreWithModel> {
-  if (config.llmMode === "live") {
-    if (!config.openRouterApiKey) {
-      throw new Error("LLM_MODE=live requires API_KEY");
-    }
-    return scoreWithLLM(buildUserContent(job, candidate));
-  }
-  return scoreWithMock(job, candidate);
 }

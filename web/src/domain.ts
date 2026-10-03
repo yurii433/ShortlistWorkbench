@@ -138,9 +138,7 @@ export type Application = {
   llm_scored_at: string | null;
   llm_model: string | null;
   /**
-   * This candidate's other applications to the same job, excluding this one,
-   * newest first. Empty when they applied once, which is why the UI only shows a
-   * count or a link when this is non-empty.
+   * The IDs of the candidate's other applications, sorted by creation date,
    */
   sibling_application_ids: string[];
   job: Job;

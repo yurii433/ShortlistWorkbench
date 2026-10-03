@@ -1,9 +1,13 @@
 import { OpenRouter } from "@openrouter/sdk";
 
 import { config } from "../../config.js";
-import type { LlmScoreWithModel } from "../../types.js";
+import type { Candidate, Job, LlmScoreWithModel } from "../../types.js";
 import { systemPrompt } from "./prompt.js";
-import { parseLlmScore } from "./llm.service.js";
+import {
+  parseLlmScore,
+  scoreWithMock,
+  buildUserContent,
+} from "./llm.service.js";
 
 async function scoreWithLLM(userContent: any): Promise<LlmScoreWithModel> {
   const client = new OpenRouter({ apiKey: config.openRouterApiKey });
@@ -30,4 +34,17 @@ async function scoreWithLLM(userContent: any): Promise<LlmScoreWithModel> {
     ...parseLlmScore(completion.choices[0].message.content),
     model: completion.model || "openrouter/auto",
   };
+}
+
+export async function scoreCandidate(
+  job: Job,
+  candidate: Candidate,
+): Promise<LlmScoreWithModel> {
+  if (config.llmMode === "live") {
+    if (!config.openRouterApiKey) {
+      throw new Error("LLM_MODE=live requires API_KEY");
+    }
+    return scoreWithLLM(buildUserContent(job, candidate));
+  }
+  return scoreWithMock(job, candidate);
 }
