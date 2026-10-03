@@ -8,7 +8,7 @@ const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../../../..",
 );
-const dataDir = path.join(root, "csv_data");
+const dataDir = path.join(root, "./server/csv_data");
 
 function readCsv(file: string): Record<string, string>[] {
   const raw = fs.readFileSync(path.join(dataDir, file), "utf8");
