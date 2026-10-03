@@ -3,7 +3,7 @@ import {
   BadRequestError,
   NotFoundError,
 } from "../../errors.js";
-import { parseLlmScore, scoreCandidate } from "../../llm.js";
+import { scoreCandidate } from "../llm/llm.service.js";
 import type {
   Application,
   ListResult,

@@ -1,8 +1,8 @@
 import { OpenRouter } from "@openrouter/sdk";
 
-import { config } from "./config.js";
-import type { Candidate, Job, LlmScoreWithModel } from "./types.js";
-import { systemPrompt } from "./modules/llm/prompt.js";
+import { config } from "../../config.js";
+import type { Candidate, Job, LlmScoreWithModel } from "../../types.js";
+import { systemPrompt } from "./prompt.js";
 
 export const LLM_SCORE_MIN = 0;
 export const LLM_SCORE_MAX = 100;
