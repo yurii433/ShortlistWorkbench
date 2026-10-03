@@ -149,8 +149,14 @@ export function createApplicationRepository(
 
       for (const [key, column] of Object.entries(APPLICATION_FILTER_COLUMNS)) {
         const filterValue = query[key as ApplicationFilterKey];
-        if (filterValue && Array.isArray(filterValue) && filterValue.length > 0) {
-          const placeholders = filterValue.map((_, i) => `$${values.length + i + 1}`).join(", ");
+        if (
+          filterValue &&
+          Array.isArray(filterValue) &&
+          filterValue.length > 0
+        ) {
+          const placeholders = filterValue
+            .map((_, i) => `$${values.length + i + 1}`)
+            .join(", ");
           whereClauses.push(`${column} IN (${placeholders})`);
           values.push(...filterValue);
         }
@@ -165,7 +171,9 @@ export function createApplicationRepository(
         whereClauses.push("a.llm_score IS NOT NULL");
       }
 
-      const where = whereClauses.length ? `WHERE ${whereClauses.join(" AND ")}` : "";
+      const where = whereClauses.length
+        ? `WHERE ${whereClauses.join(" AND ")}`
+        : "";
       const direction = sqlDirection(query.order);
 
       const countSql = `
@@ -203,7 +211,10 @@ export function createApplicationRepository(
         `
         UPDATE applications
         SET status = $2,
-            status_updated_at = NOW(),
+            status_updated_at = CASE
+              WHEN status IS DISTINCT FROM $2 THEN NOW()
+              ELSE status_updated_at
+            END,
             recruiter_note = COALESCE($3, recruiter_note)
         WHERE application_id = $1
         `,

@@ -153,6 +153,13 @@ describe("PATCH /applications/:id", () => {
     expect(res.body.recruiter_note).toBe("First review");
   });
 
+  it("stamps status_updated_at when the status really moves", async () => {
+    const res = await request(app)
+      .patch("/applications/A1")
+      .send({ status: "shortlisted" });
+    expect(res.body.status_updated_at).not.toBeNull();
+  });
+
   it("rejects invalid status", async () => {
     const res = await request(app)
       .patch("/applications/A1")

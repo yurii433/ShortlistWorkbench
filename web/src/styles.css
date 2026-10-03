@@ -128,8 +128,7 @@ h3 {
   font-size: 0.85rem;
 }
 
-.filter-field,
-.note-label {
+.filter-field {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
@@ -138,10 +137,6 @@ h3 {
 
 .sort-field {
   margin-left: auto;
-}
-
-.note-actions {
-  margin-top: 0.5rem;
 }
 
 select,
@@ -400,8 +395,74 @@ tbody tr.selected {
   color: var(--muted);
 }
 
-.status-row {
-  margin-bottom: 0.75rem;
+/*
+ * Moving an application is two steps: the select stages a status, the button
+ * commits it together with the note. The card frames both, and turns accent
+ * while a staged move is waiting, because a value in the select no longer means
+ * it is saved.
+ */
+.move-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbf8f2;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.move-form--staged {
+  border-color: var(--accent);
+  background: #f3faf7;
+}
+
+/* Confirmed, so a warmer green than the staged tint: the move is behind us. */
+.move-form--saved {
+  border-color: #7fae94;
+  background: #edf6ee;
+}
+
+.move-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.move-field p {
+  margin: 0;
+}
+
+.move-form .error {
+  margin: 0;
+}
+
+.field-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.move-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.move-hint--saved {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.move-commit {
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  font-weight: 600;
 }
 
 @media (max-width: 900px) {
