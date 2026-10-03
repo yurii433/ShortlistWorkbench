@@ -6,8 +6,7 @@ export type AsyncRequestHandler = (
 ) => Promise<void>;
 
 /**
- * Express 4 does not forward rejected promises, so a throwing handler would hang
- * the request instead of reaching the error middleware. Wrap it once, here.
+ * Forwards rejected promises to Express error middleware.
  */
 export function asyncHandler(handler: AsyncRequestHandler): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
