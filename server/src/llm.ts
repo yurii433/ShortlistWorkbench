@@ -1,12 +1,11 @@
 import { OpenRouter } from "@openrouter/sdk";
 
 import { config } from "./config.js";
-import type { Candidate, Job, LlmScore } from "./types.js";
+import type { Candidate, Job, LlmScoreWithModel } from "./types.js";
 import { systemPrompt } from "./modules/llm/prompt.js";
 
 export const LLM_SCORE_MIN = 0;
 export const LLM_SCORE_MAX = 100;
-export const ANTHROPIC_MODEL = "claude-haiku-4-5";
 
 function hashIds(jobId: string, candidateId: string): number {
   const text = `${jobId}:${candidateId}`;
@@ -60,20 +59,20 @@ export function parseLlmScore(response: unknown): LlmScore {
 async function scoreWithMock(
   job: Job,
   candidate: Candidate,
-): Promise<LlmScore> {
+): Promise<LlmScoreWithModel> {
   const score = hashIds(job.job_id, candidate.candidate_id);
   return {
     score,
     reason: `Stub fit of ${score}/100 for ${candidate.full_name} on ${job.title} in ${job.city}.`,
+    model: "mock",
   };
 }
 
-async function scoreWithLLM(userContent: any): Promise<LlmScore> {
+async function scoreWithLLM(userContent: any): Promise<LlmScoreWithModel> {
   const client = new OpenRouter({ apiKey: config.openRouterApiKey });
 
   const completion = await client.chat.send({
     chatRequest: {
-      // using free model for now, can switch to any model availiable on OpenRouter.
       model: "openrouter/auto",
       messages: [
         { role: "system", content: systemPrompt },
@@ -90,14 +89,14 @@ async function scoreWithLLM(userContent: any): Promise<LlmScore> {
     throw new Error("Non expected LLM response: no content to parse");
   }
 
-  return parseLlmScore(completion.choices[0].message.content);
+  return {
+    ...parseLlmScore(completion.choices[0].message.content),
+    model: completion.model || "openrouter/auto",
+  };
 }
 
-export async function scoreWithLlm(
-  job: Job,
-  candidate: Candidate,
-): Promise<LlmScore> {
-  const userContent = `
+function buildUserContent(job: Job, candidate: Candidate): string {
+  return `
       ### Job
       ID: ${job.job_id}
       Title: ${job.title}
@@ -110,19 +109,17 @@ export async function scoreWithLlm(
       Preferred Family: ${candidate.preferred_job_family}
       Years Experience: ${candidate.years_experience}
       Location: ${candidate.city}, ${candidate.country}`;
+}
 
+export async function scoreCandidate(
+  job: Job,
+  candidate: Candidate,
+): Promise<LlmScoreWithModel> {
   if (config.llmMode === "live") {
     if (!config.openRouterApiKey) {
       throw new Error("LLM_MODE=live requires API_KEY");
     }
-    return scoreWithLLM(userContent);
+    return scoreWithLLM(buildUserContent(job, candidate));
   }
   return scoreWithMock(job, candidate);
 }
-
-export const mockScorer = {
-  model: "mock",
-  async score(input: { job: Job; candidate: Candidate }): Promise<LlmScore> {
-    return scoreWithMock(input.job, input.candidate);
-  },
-};

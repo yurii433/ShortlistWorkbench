@@ -9,14 +9,12 @@ import { createJobHandlers } from "./modules/jobs/job.handler.js";
 import { createJobRepository } from "./modules/jobs/job.repository.js";
 import { createJobRouter } from "./modules/jobs/job.routes.js";
 import { createJobService } from "./modules/jobs/job.service.js";
-import type { MatchScorer } from "./types.js";
 
 /**
  * The one place the layers are wired together, bottom up: pool → repositories →
- * services → handlers → routers. The pool and the scorer are arguments, which is
- * what lets the tests point this at their own database.
+ * services → handlers → routers.
  */
-export function createApp(pool: Pool, scorer: MatchScorer) {
+export function createApp(pool: Pool) {
   const app = express();
   app.use(express.json());
 
@@ -25,10 +23,7 @@ export function createApp(pool: Pool, scorer: MatchScorer) {
   const jobHandlers = createJobHandlers(jobService);
 
   const applicationRepository = createApplicationRepository(pool);
-  const applicationService = createApplicationService(
-    applicationRepository,
-    scorer,
-  );
+  const applicationService = createApplicationService(applicationRepository);
   const applicationHandlers = createApplicationHandlers(applicationService);
 
   app.get("/health", (_req, res) => {

@@ -3,12 +3,11 @@ import {
   BadRequestError,
   NotFoundError,
 } from "../../errors.js";
-import { parseLlmScore } from "../../llm.js";
+import { parseLlmScore, scoreCandidate } from "../../llm.js";
 import type {
   Application,
   ListResult,
-  LlmScore,
-  MatchScorer,
+  LlmScoreWithModel,
 } from "../../types.js";
 import { isStatus } from "../../types.js";
 import type { ApplicationRepository } from "./application.repository.js";
@@ -31,7 +30,6 @@ export type ApplicationService = {
  */
 export function createApplicationService(
   repository: ApplicationRepository,
-  scorer: MatchScorer,
 ): ApplicationService {
   return {
     async list(query) {
@@ -63,17 +61,11 @@ export function createApplicationService(
       const application = await repository.findById(id);
       if (!application) throw new NotFoundError();
 
-      // The score is cached on the application, so a second call never re-asks.
       if (application.llm_score !== null) return application;
 
-      let scored: LlmScore;
+      let scored: LlmScoreWithModel;
       try {
-        scored = parseLlmScore(
-          await scorer.score({
-            job: application.job,
-            candidate: application.candidate,
-          }),
-        );
+        scored = await scoreCandidate(application.job, application.candidate);
       } catch {
         throw new BadGatewayError("llm_unavailable");
       }
@@ -82,7 +74,7 @@ export function createApplicationService(
         id,
         scored.score,
         scored.reason,
-        scorer.model,
+        scored.model,
       );
 
       return (await repository.findById(id)) ?? application;

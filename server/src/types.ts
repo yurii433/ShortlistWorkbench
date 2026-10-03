@@ -86,9 +86,10 @@ export type LlmScore = {
   reason: string;
 };
 
-export type MatchScorer = {
+export type LlmScoreWithModel = {
+  score: number;
+  reason: string;
   model: string;
-  score(input: { job: Job; candidate: Candidate }): Promise<LlmScore>;
 };
 
 /** The envelope every list endpoint returns. */
