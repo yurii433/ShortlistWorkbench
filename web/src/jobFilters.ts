@@ -13,19 +13,16 @@ export type JobFilterFields = Record<JobFilterKey, FilterField>;
 
 export const JOB_FILTERS = {
   search: {
-    param: "q",
     label: "Search",
     kind: "text",
     placeholder: "Title or city",
   },
   country: {
-    param: "country",
     label: "Country",
     kind: "select",
     options: COUNTRIES.map(({ code, name }) => ({ value: code, label: name })),
   },
   jobFamily: {
-    param: "jobFamily",
     label: "Job family",
     kind: "select",
     options: JOB_FAMILIES.map((family) => ({ value: family, label: family })),

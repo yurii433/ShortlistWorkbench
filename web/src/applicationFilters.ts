@@ -33,7 +33,6 @@ export type ApplicationFilterFields = Record<ApplicationFilterKey, FilterField>;
 
 export const APPLICATION_FILTERS = {
   status: {
-    param: "status",
     label: "Status",
     kind: "checkboxes",
     options: STATUSES.map((status) => ({
@@ -42,7 +41,6 @@ export const APPLICATION_FILTERS = {
     })),
   },
   source: {
-    param: "source",
     label: "Source",
     kind: "checkboxes",
     options: SOURCES.map((source) => ({
@@ -51,7 +49,6 @@ export const APPLICATION_FILTERS = {
     })),
   },
   matchBand: {
-    param: "matchBand",
     label: "Match band",
     kind: "checkboxes",
     options: MATCH_BANDS.map((band) => ({
@@ -60,25 +57,21 @@ export const APPLICATION_FILTERS = {
     })),
   },
   candidateCountry: {
-    param: "candidateCountry",
     label: "Candidate country",
     kind: "checkboxes",
     options: COUNTRIES.map(({ code, name }) => ({ value: code, label: name })),
   },
   candidateCity: {
-    param: "candidateCity",
     label: "Candidate city",
     kind: "checkboxes",
     options: CITIES.map((city) => ({ value: city, label: city })),
   },
   experience: {
-    param: "experience",
     label: "Experience",
     kind: "checkboxes",
     options: EXPERIENCE_BUCKETS,
   },
   preferredJobFamily: {
-    param: "preferredJobFamily",
     label: "Preferred job family",
     kind: "checkboxes",
     options: JOB_FAMILIES.map((family) => ({ value: family, label: family })),

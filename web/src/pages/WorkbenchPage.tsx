@@ -72,13 +72,28 @@ export function WorkbenchPage() {
     experience,
     preferredJobFamily,
   } = query;
-  const minExperience = minExperienceOf(experience);
+
+  /**
+   * `useUrlQuery` builds a fresh array for every list field on each URL change,
+   * so their identity says nothing about whether the request changed. Depending
+   * on the arrays would refetch the whole list every time a row is opened, so
+   * the request is keyed on their values instead.
+   */
+  const filterKey = JSON.stringify([
+    status,
+    source,
+    matchBand,
+    candidateCountry,
+    candidateCity,
+    experience,
+    preferredJobFamily,
+  ]);
 
   const fetcher = useCallback(
     () =>
       fetchApplications({
         jobId: jobId ?? "",
-        minExperience,
+        minExperience: minExperienceOf(experience),
         pageSize: PAGE_SIZE,
         sort,
         order,
@@ -90,19 +105,7 @@ export function WorkbenchPage() {
         candidateCity,
         preferredJobFamily,
       }),
-    [
-      jobId,
-      minExperience,
-      page,
-      sort,
-      order,
-      status,
-      source,
-      matchBand,
-      candidateCountry,
-      candidateCity,
-      preferredJobFamily,
-    ],
+    [jobId, page, sort, order, filterKey],
   );
   const { items, total, loading, error, reload, setItems } = useListQuery(
     fetcher,

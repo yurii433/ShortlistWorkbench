@@ -12,7 +12,7 @@ import { ErrorState } from "../ui/ErrorState";
 import { StatusBadge } from "../ui/StatusBadge";
 
 type Props = {
-  /** The selected application, or "" when nothing is open. */
+  /** The application open in the panel; the panel is mounted only with a real id. */
   applicationId: string;
   /** Reflects a saved change in the list row behind the panel. */
   onRowChange: (application: Application) => void;
