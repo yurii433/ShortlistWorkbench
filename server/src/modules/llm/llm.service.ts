@@ -49,10 +49,10 @@ export async function scoreWithMock(
   job: Job,
   candidate: Candidate,
 ): Promise<LlmScoreWithModel> {
-  const score = Math.random() * (LLM_SCORE_MAX - LLM_SCORE_MIN) + LLM_SCORE_MIN;
+  const score = Math.floor(Math.random() * 100) + 1;
   return {
     score,
-    reason: `Stub fit of ${score}/100 for ${candidate.full_name} on ${job.title} in ${job.city}.`,
+    reason: `Mock evaluation: ${score}/100 for ${candidate.full_name} on ${job.title} in ${job.city}.`,
     model: "mock",
   };
 }
