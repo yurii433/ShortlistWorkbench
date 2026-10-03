@@ -172,7 +172,7 @@ export function WorkbenchPage() {
 
       {jobError ? <p className="error">{jobError}</p> : null}
 
-      <div className={`workbench${query.id ? " workbench--selected" : ""}`}>
+      <div className={`workbench ${query.id ? "workbench--has-detail" : ""}`}>
         <aside className="sidebar">
           <FilterBar
             fields={APPLICATION_FILTERS}

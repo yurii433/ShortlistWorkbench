@@ -176,35 +176,29 @@ input[type="search"] {
   min-height: 24rem;
 }
 
+/* The workbench has two or three columns: filters, candidate list, and an optional detail panel. */
 .workbench {
-  display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
+  display: flex;
   gap: 1rem;
-  align-items: start;
+  align-items: flex-start;
 }
 
-.workbench--selected {
-  grid-template-columns: 220px minmax(0, 1.25fr) minmax(0, 1fr);
+.workbench--has-detail {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
 }
 
 .sidebar {
+  flex: 0 0 220px;
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.list-pane,
-.panel {
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 1rem;
-  min-height: 28rem;
-}
-
 .list-pane {
-  display: flex;
-  flex-direction: column;
+  flex: 1;
+  min-height: 28rem;
 }
 
 .list-toolbar {
@@ -260,6 +254,43 @@ tbody tr.selected {
   background: var(--accent-soft);
 }
 
+/*
+ * The candidate table carries six columns, so the widths are fixed: without them
+ * the browser gives every free-text cell the same room and the two-line rows
+ * push the scores off the edge of a narrow pane.
+ */
+.candidates-table {
+  table-layout: fixed;
+}
+
+.candidates-table th:nth-child(1) {
+  width: 25%;
+}
+.candidates-table th:nth-child(2) {
+  width: 20%;
+}
+.candidates-table th:nth-child(3) {
+  width: 15%;
+}
+.candidates-table th:nth-child(4) {
+  width: 15%;
+}
+.candidates-table th:nth-child(5) {
+  width: 20%;
+}
+
+/** Long text stays on one line and stays reachable through its tooltip. */
+.cell-clamp {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/** Prevent awkward line breaks in dates. */
+.nowrap {
+  white-space: nowrap;
+}
+
 .pager {
   display: flex;
   justify-content: space-between;
@@ -268,25 +299,46 @@ tbody tr.selected {
 }
 
 .panel {
+  flex: 0 0 450px;
   overflow-y: auto;
   overflow-x: hidden;
-  align-self: start;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.5rem;
+  min-height: 28rem;
 }
 
 .panel-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 0.75rem;
-  .muted {
-    margin: 0 0 10px 0;
-  }
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.panel-header p.muted {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+}
+
+.panel-header h2 {
+  margin: 0.25rem 0 0.1rem;
+}
+
+.panel-header + section {
+  margin-top: 0;
+}
+
+.panel-header + section h3 {
+  margin-top: 0;
 }
 
 .panel-actions {
   display: flex;
-  flex: 0 0 auto;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.5rem;
 }
 
@@ -332,29 +384,38 @@ tbody tr.selected {
 .scores {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin: 1rem 0;
+  gap: 1rem;
+  margin: 1.5rem 0;
 }
 
 .score-card {
+  background: #f9fafb;
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 0.75rem;
+  padding: 1rem;
+}
+
+.score-card .eyebrow {
+  margin: 0 0 0.5rem;
 }
 
 .score-value {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 650;
   margin: 0.2rem 0;
+  color: var(--ink);
+}
+
+.score-card .muted {
+  font-size: 0.75rem;
 }
 
 .badge {
   display: inline-block;
   border-radius: 999px;
-  padding: 0.15rem 0.55rem;
+  padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
-  background: #eee;
-  height: 1.5rem;
+  height: auto;
   line-height: 1.2rem;
 }
 
@@ -378,6 +439,10 @@ tbody tr.selected {
   background: #f6e2c3;
   margin-left: 0.4rem;
 }
+.badge-duplicate {
+  background: #f6e2c3;
+  margin-left: 0.4rem;
+}
 .duplicate-links {
   color: var(--muted);
 }
@@ -391,88 +456,26 @@ tbody tr.selected {
   text-decoration: none;
 }
 
-.error {
-  color: #9b2c2c;
-}
-
-.empty {
-  color: var(--muted);
-}
-
-/*
- * Moving an application is two steps: the select stages a status, the button
- * commits it together with the note. The card frames both, and turns accent
- * while a staged move is waiting, because a value in the select no longer means
- * it is saved.
- */
-.move-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-  margin-top: 0.5rem;
-  padding: 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #fbf8f2;
-  transition:
-    border-color 120ms ease,
-    background-color 120ms ease;
-}
-
-.move-form--staged {
-  border-color: var(--accent);
-  background: #f3faf7;
-}
-
-/* Confirmed, so a warmer green than the staged tint: the move is behind us. */
-.move-form--saved {
-  border-color: #7fae94;
-  background: #edf6ee;
-}
-
-.move-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.85rem;
-}
-
-.move-field p {
-  margin: 0;
-}
-
-.move-form .error {
-  margin: 0;
-}
-
-.field-label {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.72rem;
-  color: var(--muted);
-}
-
 .move-hint {
+  font-size: 0.8rem;
   margin: 0;
-  font-size: 0.78rem;
   color: var(--muted);
 }
 
 .move-hint--saved {
-  color: var(--accent);
+  color: #16a34a;
   font-weight: 600;
 }
 
 .move-commit {
   width: 100%;
-  padding: 0.55rem 0.8rem;
+  padding: 0.65rem 0.8rem;
   font-weight: 600;
 }
 
 @media (max-width: 900px) {
   .filter-grid,
   .workbench,
-  .workbench--selected,
   .scores,
   .facts {
     grid-template-columns: 1fr;

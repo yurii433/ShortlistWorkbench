@@ -6,7 +6,7 @@ import { Pager } from "../ui/Pager";
 import { SortSelect } from "../ui/SortSelect";
 import { ApplicationRow } from "./ApplicationRow";
 
-const COLUMNS = ["Candidate", "Match", "LLM", "Status"];
+const COLUMNS = ["Candidate", "Profile", "Score", "Status", "Applied"];
 
 const EMPTY_MESSAGES: Record<string, string> = {
   score_disagreement:
@@ -55,7 +55,7 @@ export function ApplicationsList({
           }
         >
           {(items) => (
-            <table>
+            <table className="candidates-table">
               <thead>
                 <tr>
                   {COLUMNS.map((column) => (

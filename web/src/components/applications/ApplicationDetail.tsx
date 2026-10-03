@@ -191,6 +191,9 @@ export function ApplicationDetail({
           <p className="eyebrow">{detail.application_id}</p>
           <h2>{detail.candidate.full_name}</h2>
           <p className="muted">{detail.candidate.email}</p>
+          <p className="muted">
+            {detail.candidate.city}, {detail.candidate.country}
+          </p>
         </div>
         <div className="panel-actions">
           <StatusBadge status={detail.status} />
@@ -199,6 +202,7 @@ export function ApplicationDetail({
       </header>
 
       <section>
+        <h3>Profile</h3>
         <dl className="facts">
           <Fact label="Source" value={SOURCE_LABELS[detail.source]} />
           <Fact
@@ -210,10 +214,6 @@ export function ApplicationDetail({
             value={`${detail.candidate.years_experience} years`}
           />
           <Fact label="Prefers" value={detail.candidate.preferred_job_family} />
-          <Fact
-            label="Based in"
-            value={`${detail.candidate.city}, ${detail.candidate.country}`}
-          />
           {detail.sibling_application_ids.length > 0 && (
             <Fact
               label="Applications to this job"
@@ -227,7 +227,7 @@ export function ApplicationDetail({
         <div className="score-card">
           <p className="eyebrow">Rule-based</p>
           <p className="score-value">{toPercent(detail.match_score)}</p>
-          <p className="muted">{detail.match_band} band · 0–100 scale</p>
+          <p className="muted">{detail.match_band} band</p>
         </div>
         <div className="score-card">
           <p className="eyebrow">LLM</p>
@@ -235,11 +235,11 @@ export function ApplicationDetail({
             <>
               <p className="score-value">{detail.llm_score}</p>
               <p className="muted">{detail.llm_reason}</p>
-              <p className="muted tiny">LLM · {detail.llm_model}</p>
+              <p className="muted tiny">{detail.llm_model}</p>
             </>
           ) : (
             <>
-              <p className="muted">Not scored yet. On demand only.</p>
+              <p className="muted">Not scored yet</p>
               <button
                 type="button"
                 onClick={() => void onScore()}

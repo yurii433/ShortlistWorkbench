@@ -27,9 +27,8 @@ export function toPercent(score: number): number {
  * value is an ISO string produced by the API, so parsing is safe.
  */
 export function toDateTime(value: string | null): string {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
+  const date = toValidDate(value);
+  if (!date) return "";
   return date.toLocaleString(undefined, {
     year: "numeric",
     month: "short",
@@ -37,4 +36,38 @@ export function toDateTime(value: string | null): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+/** A stored date without the time, for table rows that only need the day. */
+export function toDate(value: string | null): string {
+  const date = toValidDate(value);
+  if (!date) return "";
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+/**
+ * A compact age such as "today", "4d ago" or "3mo ago". Table rows have no room
+ * for a full date next to every other fact, and an age is what a recruiter
+ * triaging a pipeline actually compares against.
+ */
+export function toAge(value: string | null): string {
+  const date = toValidDate(value);
+  if (!date) return "";
+  const days = Math.floor((Date.now() - date.getTime()) / 86_400_000);
+  if (days < 1) return "today";
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.floor(days / 7)}w ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
+/** Every stored timestamp is an ISO string from the API, so only "missing" fails. */
+function toValidDate(value: string | null): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
