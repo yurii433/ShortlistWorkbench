@@ -8,7 +8,6 @@ export const STATUSES = [
 
 export type Status = (typeof STATUSES)[number];
 
-/** Mirrors the `match_band` CHECK on applications. */
 export const MATCH_BANDS = ["low", "medium", "high"] as const;
 
 export type MatchBand = (typeof MATCH_BANDS)[number];
@@ -72,9 +71,7 @@ export type Application = {
   llm_scored_at: string | null;
   llm_model: string | null;
   /**
-   * This candidate's other applications to the same job, excluding this one,
-   * newest first. Empty when they applied once. Deliberately independent of any
-   * active filter, so the signal survives sorting and paging.
+   * if candidate has multiple applications for the same job, this will contain the ids of those applications. This is useful for the UI to show a warning that the candidate has multiple applications for the same job.
    */
   sibling_application_ids: string[];
   job: Job;
@@ -99,11 +96,3 @@ export type ListResult<T> = {
   pageSize: number;
   total: number;
 };
-
-export function isStatus(value: string): value is Status {
-  return (STATUSES as readonly string[]).includes(value);
-}
-
-export function isMatchBand(value: string): value is MatchBand {
-  return (MATCH_BANDS as readonly string[]).includes(value);
-}
