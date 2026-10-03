@@ -1,6 +1,5 @@
 import pg from "pg";
 import { applyMigrations } from "../src/db/migrate.js";
-import type { Candidate, Job, LlmScore, MatchScorer } from "../src/types.js";
 
 /** The Compose Postgres from docker-compose.yml, test database. */
 export const testUrl =
@@ -41,29 +40,4 @@ async function insertFixtures(): Promise<void> {
       ('A5', 'J-AT-IT', 'C1', '2026-01-05 10:00', 'referral', 0.120, 'low', 'new', NULL),
       ('A6', 'J-DE-LOG', 'C3', '2026-01-06 10:00', 'job_board', 0.880, 'high', 'hired', '2026-01-07 10:00');
   `);
-}
-
-/** Counts how often the model was asked, to prove the cache works. */
-export class CountingScorer implements MatchScorer {
-  readonly model = "mock-test";
-  calls = 0;
-
-  async score(input: { job: Job; candidate: Candidate }): Promise<LlmScore> {
-    this.calls += 1;
-    return {
-      score: 42,
-      reason: `Counted score for ${input.candidate.full_name} / ${input.job.title}`,
-    };
-  }
-}
-
-/** Answers outside the accepted 0–100 range, to prove the API rejects it. */
-export class InvalidScorer implements MatchScorer {
-  readonly model = "bad";
-  calls = 0;
-
-  async score(): Promise<LlmScore> {
-    this.calls += 1;
-    return { score: 999, reason: "too high" };
-  }
 }

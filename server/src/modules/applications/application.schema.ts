@@ -5,6 +5,7 @@ import {
   readSort,
   readTextList,
 } from "../../http/list-query.js";
+import { isMatchBand, isStatus } from "../../types.js";
 import {
   APPLICATION_SORT_FIELDS,
   type ApplicationListQuery,
@@ -16,7 +17,14 @@ export function parseApplicationListQuery(
   query: Record<string, unknown>,
 ): ApplicationListQuery {
   const status = readTextList(query.status);
+  if (!status.every(isStatus)) {
+    throw new BadRequestError("invalid_status");
+  }
+
   const matchBand = readTextList(query.matchBand);
+  if (!matchBand.every(isMatchBand)) {
+    throw new BadRequestError("invalid_match_band");
+  }
 
   return {
     ...readPaging(query),

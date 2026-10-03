@@ -32,22 +32,6 @@ export type Candidate = {
   preferred_job_family: string;
 };
 
-/**
- * The candidate fields an application carries. Deliberately a separate type from
- * `Candidate`: this is a read projection, not the entity, and the two are free
- * to diverge as the candidate record grows (CV, consent, notes). Keep it a
- * standalone declaration rather than a `Pick` so nothing re-ties them.
- */
-export type ApplicationCandidate = {
-  candidate_id: string;
-  full_name: string;
-  email: string;
-  country: string;
-  city: string;
-  years_experience: number;
-  preferred_job_family: string;
-};
-
 export type JobWithCounts = Job & {
   application_count: number;
   new_count: number;
@@ -75,7 +59,7 @@ export type Application = {
    */
   sibling_application_ids: string[];
   job: Job;
-  candidate: ApplicationCandidate;
+  candidate: Candidate;
 };
 
 export type LlmScore = {
@@ -96,3 +80,11 @@ export type ListResult<T> = {
   pageSize: number;
   total: number;
 };
+
+export function isStatus(value: string): value is Status {
+  return (STATUSES as readonly string[]).includes(value);
+}
+
+export function isMatchBand(value: string): value is MatchBand {
+  return (MATCH_BANDS as readonly string[]).includes(value);
+}

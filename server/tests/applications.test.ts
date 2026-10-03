@@ -1,16 +1,17 @@
 import request from "supertest";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app.js";
-import {
-  applySchema,
-  CountingScorer,
-  InvalidScorer,
-  pool,
-  resetFixtures,
-} from "./fixtures.js";
+import { parseLlmScore } from "../src/modules/llm/llm.service.js";
+import { scoreCandidate } from "../src/modules/llm/llm.scorer.js";
+import { applySchema, pool, resetFixtures } from "./fixtures.js";
 
-const scorer = new CountingScorer();
-const app = createApp(pool, scorer);
+vi.mock("../src/modules/llm/llm.scorer.js", () => ({
+  scoreCandidate: vi.fn(),
+}));
+
+const mockScoreCandidate = vi.mocked(scoreCandidate);
+
+const app = createApp(pool);
 
 beforeAll(applySchema);
 beforeEach(resetFixtures);
@@ -287,27 +288,44 @@ describe("status updates", () => {
 
 describe("LLM score", () => {
   beforeEach(() => {
-    scorer.calls = 0;
+    mockScoreCandidate.mockReset();
   });
 
   it("caches the score and does not call the model twice", async () => {
+    mockScoreCandidate.mockResolvedValue({
+      score: 42,
+      reason: "Stubbed score for Anna Schmidt / Warehouse Associate",
+      model: "mock-test",
+    });
+
     const first = await request(app).post("/applications/A1/llm-score");
     expect(first.status).toBe(200);
     expect(first.body.llm_score).toBe(42);
-    expect(scorer.calls).toBe(1);
+    expect(mockScoreCandidate).toHaveBeenCalledTimes(1);
 
     const second = await request(app).post("/applications/A1/llm-score");
     expect(second.status).toBe(200);
     expect(second.body.llm_score).toBe(42);
-    expect(scorer.calls).toBe(1);
+    expect(mockScoreCandidate).toHaveBeenCalledTimes(1);
   });
 
-  it("returns 502 and stores nothing when the payload is invalid", async () => {
-    const badApp = createApp(pool, new InvalidScorer());
-    const response = await request(badApp).post("/applications/A3/llm-score");
+  it("returns 502 and stores nothing when scoring fails", async () => {
+    mockScoreCandidate.mockRejectedValue(new Error("model unavailable"));
+
+    const response = await request(app).post("/applications/A3/llm-score");
     expect(response.status).toBe(502);
     const fetched = await request(app).get("/applications/A3");
     expect(fetched.body.llm_score).toBeNull();
+  });
+
+  it("rejects a model score outside 0-100", () => {
+    expect(() => parseLlmScore({ score: 999, reason: "too high" })).toThrow(
+      /integer 0.100/,
+    );
+    expect(parseLlmScore({ score: 42, reason: "fits" })).toEqual({
+      score: 42,
+      reason: "fits",
+    });
   });
 
   it("404s for an unknown application", async () => {

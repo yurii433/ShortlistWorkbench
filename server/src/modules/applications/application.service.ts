@@ -9,6 +9,7 @@ import type {
   ListResult,
   LlmScoreWithModel,
 } from "../../types.js";
+import { isStatus } from "../../types.js";
 import type { ApplicationRepository } from "./application.repository.js";
 import type {
   ApplicationListQuery,
@@ -44,6 +45,9 @@ export function createApplicationService(
 
     async update(id, input) {
       const { status, note } = input;
+      if (!isStatus(status)) {
+        throw new BadRequestError("invalid_status");
+      }
       if (note !== undefined && typeof note !== "string") {
         throw new BadRequestError("invalid_note");
       }

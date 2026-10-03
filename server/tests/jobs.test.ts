@@ -1,15 +1,9 @@
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
-import {
-  applySchema,
-  CountingScorer,
-  pool,
-  resetFixtures,
-} from "./fixtures.js";
+import { applySchema, pool, resetFixtures } from "./fixtures.js";
 
-const scorer = new CountingScorer();
-const app = createApp(pool, scorer);
+const app = createApp(pool);
 
 beforeAll(applySchema);
 beforeEach(resetFixtures);
