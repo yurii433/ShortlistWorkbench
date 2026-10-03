@@ -2,7 +2,10 @@ import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const root = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../..",
+);
 dotenv.config({ path: path.join(root, ".env") });
 
 type LlmMode = "mock" | "live";
@@ -22,5 +25,5 @@ export const config = {
     process.env.DATABASE_URL ??
     "postgres://shortlist:shortlist@localhost:5433/shortlist",
   llmMode: readLlmMode(),
-  anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
+  openRouterApiKey: process.env.OPENROUTER_API_KEY ?? "",
 };

@@ -1,6 +1,8 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { OpenRouter } from "@openrouter/sdk";
+
 import { config } from "./config.js";
 import type { Candidate, Job, LlmScore } from "./types.js";
+import { systemPrompt } from "./modules/llm/prompt.js";
 
 export const LLM_SCORE_MIN = 0;
 export const LLM_SCORE_MAX = 100;
@@ -15,45 +17,50 @@ function hashIds(jobId: string, candidateId: string): number {
   return sum;
 }
 
-export function parseLlmScore(payload: unknown): LlmScore {
-  if (!payload || typeof payload !== "object") {
+export function parseLlmScore(response: unknown): LlmScore {
+  let parsed = response;
+
+  // 1. If response is a string, strip markdown fences and parse JSON
+  if (typeof response === "string") {
+    try {
+      const cleanJson = response.replace(/```json\n?|\n?```/g, "").trim();
+      parsed = JSON.parse(cleanJson);
+    } catch {
+      throw new Error("LLM response string could not be parsed as JSON");
+    }
+  }
+
+  // 2. Ensure input is an object
+  if (!parsed || typeof parsed !== "object") {
     throw new Error("LLM score is not an object");
   }
-  const { score, reason } = payload as { score?: unknown; reason?: unknown };
+
+  const { score, reason } = parsed as { score?: unknown; reason?: unknown };
+
+  // 3. Validate score field
   if (
     typeof score !== "number" ||
     !Number.isInteger(score) ||
     score < LLM_SCORE_MIN ||
     score > LLM_SCORE_MAX
   ) {
-    throw new Error(`LLM score must be an integer ${LLM_SCORE_MIN}–${LLM_SCORE_MAX}`);
+    throw new Error(
+      `LLM score must be an integer ${LLM_SCORE_MIN}–${LLM_SCORE_MAX}`,
+    );
   }
-  if (typeof reason !== "string" || reason.trim() === "") {
-    throw new Error("LLM reason is missing");
+
+  // 4. Validate reason field (optional or required based on your type definition)
+  if (typeof reason !== "string") {
+    throw new Error("LLM score object missing string 'reason' field");
   }
-  return { score, reason: reason.trim() };
+
+  return { score, reason };
 }
 
-const SCORE_TOOL: Anthropic.Tool = {
-  name: "record_score",
-  description: "Store the structured fit score",
-  input_schema: {
-    type: "object",
-    properties: {
-      score: {
-        type: "integer",
-        minimum: LLM_SCORE_MIN,
-        maximum: LLM_SCORE_MAX,
-        description: `Fit score from ${LLM_SCORE_MIN} to ${LLM_SCORE_MAX}`,
-      },
-      reason: { type: "string", description: "One sentence" },
-    },
-    required: ["score", "reason"],
-    additionalProperties: false,
-  },
-};
-
-async function scoreWithMock(job: Job, candidate: Candidate): Promise<LlmScore> {
+async function scoreWithMock(
+  job: Job,
+  candidate: Candidate,
+): Promise<LlmScore> {
   const score = hashIds(job.job_id, candidate.candidate_id);
   return {
     score,
@@ -61,39 +68,54 @@ async function scoreWithMock(job: Job, candidate: Candidate): Promise<LlmScore> 
   };
 }
 
-async function scoreWithAnthropic(job: Job, candidate: Candidate): Promise<LlmScore> {
-  const client = new Anthropic({ apiKey: config.anthropicApiKey });
-  const response = await client.messages.create({
-    model: ANTHROPIC_MODEL,
-    max_tokens: 512,
-    system:
-      "You score how well a candidate fits a job for a staffing agency. Be strict and concise.",
-    messages: [
-      {
-        role: "user",
-        content:
-          `Job: ${job.title}, ${job.job_family}, ${job.seniority}, ${job.city} (${job.country}).\n` +
-          `Candidate: ${candidate.years_experience} years experience, prefers ${candidate.preferred_job_family}, based in ${candidate.city} (${candidate.country}).\n` +
-          "Score the fit as an integer 0–100 and one sentence.",
-      },
-    ],
-    tools: [SCORE_TOOL],
-    tool_choice: { type: "tool", name: SCORE_TOOL.name },
+async function scoreWithLLM(userContent: any): Promise<LlmScore> {
+  const client = new OpenRouter({ apiKey: config.openRouterApiKey });
+
+  const completion = await client.chat.send({
+    chatRequest: {
+      // using free model for now, can switch to any model availiable on OpenRouter.
+      model: "openrouter/auto",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent },
+      ],
+    },
   });
 
-  const block = response.content.find((item) => item.type === "tool_use");
-  if (!block || block.type !== "tool_use") {
-    throw new Error("LLM response had no structured score");
+  if (completion instanceof ReadableStream) {
+    throw new Error("Expected a non-streaming response");
   }
-  return parseLlmScore(block.input);
+
+  if (!completion.choices[0].message.content) {
+    throw new Error("Non expected LLM response: no content to parse");
+  }
+
+  return parseLlmScore(completion.choices[0].message.content);
 }
 
-export async function scoreWithLlm(job: Job, candidate: Candidate): Promise<LlmScore> {
+export async function scoreWithLlm(
+  job: Job,
+  candidate: Candidate,
+): Promise<LlmScore> {
+  const userContent = `
+      ### Job
+      ID: ${job.job_id}
+      Title: ${job.title}
+      Family: ${job.job_family}
+      Seniority: ${job.seniority}
+      Location: ${job.city}, ${job.country}
+
+      ### Candidate
+      ID: ${candidate.candidate_id}
+      Preferred Family: ${candidate.preferred_job_family}
+      Years Experience: ${candidate.years_experience}
+      Location: ${candidate.city}, ${candidate.country}`;
+
   if (config.llmMode === "live") {
-    if (!config.anthropicApiKey) {
-      throw new Error("LLM_MODE=live requires ANTHROPIC_API_KEY");
+    if (!config.openRouterApiKey) {
+      throw new Error("LLM_MODE=live requires API_KEY");
     }
-    return scoreWithAnthropic(job, candidate);
+    return scoreWithLLM(userContent);
   }
   return scoreWithMock(job, candidate);
 }

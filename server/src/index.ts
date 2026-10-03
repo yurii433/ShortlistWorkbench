@@ -14,5 +14,7 @@ const scorer = config.llmMode === "live" ? liveScorer : mockScorer;
 const app = createApp(pool, scorer);
 
 app.listen(config.port, () => {
-  console.log(`API listening on http://localhost:${config.port} (LLM_MODE=${config.llmMode})`);
+  console.log(
+    `API listening on http://localhost:${config.port} (LLM_MODE=${config.llmMode})`,
+  );
 });

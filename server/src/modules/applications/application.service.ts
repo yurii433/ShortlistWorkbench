@@ -1,4 +1,8 @@
-import { BadGatewayError, BadRequestError, NotFoundError } from "../../errors.js";
+import {
+  BadGatewayError,
+  BadRequestError,
+  NotFoundError,
+} from "../../errors.js";
 import { parseLlmScore } from "../../llm.js";
 import type {
   Application,
