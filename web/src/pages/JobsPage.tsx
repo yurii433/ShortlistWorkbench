@@ -46,16 +46,21 @@ export function JobsPage() {
     () => fetchJobs({ ...query, pageSize: PAGE_SIZE }),
     [query],
   );
-  const { items, total, loading, error, reload } = useListQuery(fetcher, ERROR_MESSAGE);
+  const { items, total, loading, error, reload } = useListQuery(
+    fetcher,
+    ERROR_MESSAGE,
+  );
 
   return (
     <div className="app">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Trenkwalder · internal</p>
+          <p className="eyebrow">Better than a spreadsheet</p>
           <h1>Open jobs</h1>
         </div>
-        <p className="muted">{rangeLabel(query.page, PAGE_SIZE, total, "jobs")}</p>
+        <p className="muted">
+          {rangeLabel(query.page, PAGE_SIZE, total, "jobs")}
+        </p>
       </header>
 
       <FilterBar
