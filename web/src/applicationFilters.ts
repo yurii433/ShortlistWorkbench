@@ -93,18 +93,30 @@ export const APPLICATION_SORT_OPTIONS: readonly SortOption[] = [
   ["score_disagreement:desc", "LLM vs rule-based gap"],
 ];
 
-/**
- * The URL parameter map, derived from the definitions. `Object.fromEntries`
- * cannot know the key union, so the cast is the price of one source of truth.
- */
-export const APPLICATION_FILTER_PARAMS = Object.fromEntries(
-  APPLICATION_FILTER_KEYS.map((key) => [key, APPLICATION_FILTERS[key].param]),
-) as Record<ApplicationFilterKey, string>;
+/** The URL parameter each filter state key is stored under. */
+export const APPLICATION_FILTER_PARAMS: Record<ApplicationFilterKey, string> = {
+  status: "status",
+  source: "source",
+  matchBand: "matchBand",
+  candidateCountry: "candidateCountry",
+  candidateCity: "candidateCity",
+  experience: "experience",
+  preferredJobFamily: "preferredJobFamily",
+};
 
 /** No filter selected is an empty list, which is what the checkboxes start at. */
-export const APPLICATION_FILTER_DEFAULTS = Object.fromEntries(
-  APPLICATION_FILTER_KEYS.map((key) => [key, [] as string[]]),
-) as Record<ApplicationFilterKey, string[]>;
+export const APPLICATION_FILTER_DEFAULTS: Record<
+  ApplicationFilterKey,
+  string[]
+> = {
+  status: [],
+  source: [],
+  matchBand: [],
+  candidateCountry: [],
+  candidateCity: [],
+  experience: [],
+  preferredJobFamily: [],
+};
 
 /**
  * Several experience buckets ticked means "at least the lowest of them", so the

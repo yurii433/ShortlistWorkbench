@@ -16,8 +16,6 @@ type Props = {
   applicationId: string;
   /** Reflects a saved change in the list row behind the panel. */
   onRowChange: (application: Application) => void;
-  /** A confirmed status change: lets the page refresh its header counts. */
-  onStatusSaved: () => void;
   /** Closes the panel without changing the rest of the current query. */
   onClose: () => void;
 };
@@ -25,17 +23,17 @@ type Props = {
 /**
  * The detail panel owns everything about the open application: loading it,
  * showing it, and the status / LLM actions. It tells the page about saved
- * changes so the row behind it and the header counts stay in sync.
+ * changes so the row behind it stays in sync.
  */
 export function ApplicationDetail({
   applicationId,
   onRowChange,
-  onStatusSaved,
   onClose,
 }: Props) {
   const [detail, setDetail] = useState<Application | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [llmError, setLlmError] = useState<string | null>(null);
   const [llmBusy, setLlmBusy] = useState(false);
 
@@ -54,13 +52,7 @@ export function ApplicationDetail({
   }, []);
 
   useEffect(() => {
-    if (applicationId) {
-      void loadDetail(applicationId);
-    } else {
-      setDetail(null);
-      setError(null);
-      setLlmError(null);
-    }
+    void loadDetail(applicationId);
   }, [applicationId, loadDetail]);
 
   const onStatusChange = async (status: Status, note?: string) => {
@@ -73,17 +65,17 @@ export function ApplicationDetail({
       status,
       recruiter_note: note ?? detail.recruiter_note,
     };
+    setSaveError(null);
     setDetail(optimistic);
     onRowChange(optimistic);
     try {
       const updated = await patchStatus(detail.application_id, status, note);
       setDetail(updated);
       onRowChange(updated);
-      onStatusSaved();
     } catch {
       setDetail(previous);
       onRowChange(previous);
-      setError("Status update failed. The previous value was restored.");
+      setSaveError("Status update failed. The previous value was restored.");
     }
   };
 
@@ -122,23 +114,14 @@ export function ApplicationDetail({
         </div>
         <ErrorState
           message={error}
-          onRetry={() => applicationId && void loadDetail(applicationId)}
+          onRetry={() => void loadDetail(applicationId)}
         />
       </aside>
     );
   }
+
   if (!detail) {
-    return (
-      <aside className="panel empty-panel">
-        {applicationId ? (
-          <div className="panel-state-actions">
-            <CloseButton onClose={onClose} />
-          </div>
-        ) : null}
-        <h2>Select an application</h2>
-        <p>Open a row to see the candidate, job, and match scores.</p>
-      </aside>
-    );
+    return null;
   }
 
   return (
@@ -225,12 +208,14 @@ export function ApplicationDetail({
             ))}
           </select>
         </div>
+        {saveError ? <p className="error">{saveError}</p> : null}
         {detail.status_updated_at ? (
           <p className="muted tiny">
             Status last changed {toDateTime(detail.status_updated_at)}
           </p>
         ) : null}
         <NoteField
+          key={detail.application_id}
           detail={detail}
           onSave={(status, note) => void onStatusChange(status, note)}
         />
@@ -263,8 +248,9 @@ function Fact({ label, value }: { label: string; value: string }) {
 
 /**
  * Keeps a draft note and saves it with the current status. Saving is explicit so
- * a half-written comment is not sent the moment focus moves away. Remounting via
- * `key` when the stored note changes picks up a note saved elsewhere.
+ * a half-written comment is not sent the moment focus moves away. The draft
+ * starts from the stored note and survives a failed save, because the caller
+ * remounts this field only when a different application is opened.
  */
 function NoteField({
   detail,
@@ -281,7 +267,6 @@ function NoteField({
       <label className="note-label">
         Note (optional)
         <textarea
-          key={detail.application_id + stored}
           value={draft}
           rows={3}
           onChange={(event) => setDraft(event.target.value)}

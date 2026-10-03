@@ -36,16 +36,16 @@ export function ApplicationRow({ item, selected, onSelect }: Props) {
             {siblings.map((id, index) => (
               <span key={id}>
                 {index > 0 ? ", " : null}
-                <a
-                  href={`?id=${encodeURIComponent(id)}`}
+                <button
+                  type="button"
+                  className="link-button"
                   onClick={(event) => {
-                    event.preventDefault();
                     event.stopPropagation();
                     onSelect(id);
                   }}
                 >
                   {id}
-                </a>
+                </button>
               </span>
             ))}
           </div>

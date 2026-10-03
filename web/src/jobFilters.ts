@@ -41,11 +41,15 @@ export const JOB_SORT_OPTIONS: readonly SortOption[] = [
   ["title:desc", "Title (Z → A)"],
 ];
 
-/** See `APPLICATION_FILTER_PARAMS` for why these are derived with a cast. */
-export const JOB_FILTER_PARAMS = Object.fromEntries(
-  JOB_FILTER_KEYS.map((key) => [key, JOB_FILTERS[key].param]),
-) as Record<JobFilterKey, string>;
+/** The URL parameter each filter state key is stored under; `search` is `q`. */
+export const JOB_FILTER_PARAMS: Record<JobFilterKey, string> = {
+  search: "q",
+  country: "country",
+  jobFamily: "jobFamily",
+};
 
-export const JOB_FILTER_DEFAULTS = Object.fromEntries(
-  JOB_FILTER_KEYS.map((key) => [key, [] as string[]]),
-) as Record<JobFilterKey, string[]>;
+export const JOB_FILTER_DEFAULTS: Record<JobFilterKey, string[]> = {
+  search: [],
+  country: [],
+  jobFamily: [],
+};

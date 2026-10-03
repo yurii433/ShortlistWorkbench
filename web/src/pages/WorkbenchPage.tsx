@@ -4,13 +4,14 @@ import { fetchApplications, fetchJob } from "../api";
 import {
   APPLICATION_FILTER_DEFAULTS,
   APPLICATION_FILTER_PARAMS,
+  APPLICATION_FILTERS,
   minExperienceOf,
   type ApplicationFilterKey,
 } from "../applicationFilters";
 import type { Application, JobWithCounts } from "../domain";
 import { ApplicationDetail } from "../components/applications/ApplicationDetail";
-import { ApplicationFilters } from "../components/applications/ApplicationFilters";
 import { ApplicationsList } from "../components/applications/ApplicationsList";
+import { FilterBar } from "../components/ui/FilterBar";
 import { pageCountOf, rangeLabel } from "../format";
 import { useListQuery } from "../hooks/useListQuery";
 import { useUrlQuery } from "../hooks/useUrlQuery";
@@ -19,7 +20,7 @@ import { useUrlQuery } from "../hooks/useUrlQuery";
  * One filter list per field, so several ticks inside a group survive a reload
  * and reach the API as repeated query parameters.
  */
-export type ApplicationsQueryState = Record<ApplicationFilterKey, string[]> & {
+type ApplicationsQueryState = Record<ApplicationFilterKey, string[]> & {
   sort: string;
   order: string;
   page: number;
@@ -59,38 +60,48 @@ export function WorkbenchPage() {
     setSearchParams(nextParams);
   };
 
-  const filterPayload = JSON.stringify({
-    status: query.status,
-    source: query.source,
-    matchBand: query.matchBand,
-    candidateCountry: query.candidateCountry,
-    candidateCity: query.candidateCity,
-    preferredJobFamily: query.preferredJobFamily,
-  });
+  const {
+    page,
+    sort,
+    order,
+    status,
+    source,
+    matchBand,
+    candidateCountry,
+    candidateCity,
+    experience,
+    preferredJobFamily,
+  } = query;
+  const minExperience = minExperienceOf(experience);
 
   const fetcher = useCallback(
     () =>
       fetchApplications({
         jobId: jobId ?? "",
-        minExperience: minExperienceOf(query.experience),
+        minExperience,
         pageSize: PAGE_SIZE,
-        sort: query.sort,
-        order: query.order,
-        page: query.page,
-        status: query.status,
-        source: query.source,
-        matchBand: query.matchBand,
-        candidateCountry: query.candidateCountry,
-        candidateCity: query.candidateCity,
-        preferredJobFamily: query.preferredJobFamily,
+        sort,
+        order,
+        page,
+        status,
+        source,
+        matchBand,
+        candidateCountry,
+        candidateCity,
+        preferredJobFamily,
       }),
     [
       jobId,
-      query.page,
-      query.sort,
-      query.order,
-      query.experience,
-      filterPayload,
+      minExperience,
+      page,
+      sort,
+      order,
+      status,
+      source,
+      matchBand,
+      candidateCountry,
+      candidateCity,
+      preferredJobFamily,
     ],
   );
   const { items, total, loading, error, reload, setItems } = useListQuery(
@@ -160,7 +171,12 @@ export function WorkbenchPage() {
 
       <div className={`workbench${query.id ? " workbench--selected" : ""}`}>
         <aside className="sidebar">
-          <ApplicationFilters query={query} onChange={setQuery} />
+          <FilterBar
+            fields={APPLICATION_FILTERS}
+            state={query}
+            onChange={(patch) => setQuery({ ...patch, page: 1 })}
+            onClear={() => setQuery({ ...APPLICATION_FILTER_DEFAULTS, page: 1 })}
+          />
         </aside>
         <ApplicationsList
           state={{ items, loading, error, reload }}
@@ -178,7 +194,6 @@ export function WorkbenchPage() {
           <ApplicationDetail
             applicationId={query.id}
             onRowChange={onRowChange}
-            onStatusSaved={() => jobId && void loadJob(jobId)}
             onClose={closeApplication}
           />
         ) : null}

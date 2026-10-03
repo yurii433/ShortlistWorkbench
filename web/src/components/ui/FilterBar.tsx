@@ -19,10 +19,9 @@ type Props<S extends object> = {
 
 /**
  * The filter and sort block of a list page. Sort stays visible because it is a
- * control the recruiter reaches for constantly; the filters themselves sit
- * behind a toggle so a screen of checkboxes does not push the list off-screen.
- * It is a normal in-flow section, not an overlay: nothing is covered up while
- * it is open.
+ * control the recruiter reaches for constantly, and the filters stay open so a
+ * shared link lands on the same set of ticked boxes without a click first. It is
+ * a normal in-flow section, not an overlay: nothing is covered up.
  */
 export function FilterBar<S extends object>({
   fields,

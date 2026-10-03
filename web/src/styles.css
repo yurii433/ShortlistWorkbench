@@ -88,10 +88,6 @@ h3 {
   flex-wrap: wrap;
 }
 
-.filter-toggle {
-  align-self: center;
-}
-
 .filter-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -386,11 +382,13 @@ tbody tr.selected {
 .duplicate-links {
   color: var(--muted);
 }
-.duplicate-links a {
+.duplicate-links button {
   color: var(--accent);
+  text-transform: none;
   text-decoration: underline;
 }
-.duplicate-links a:hover {
+
+.duplicate-links button:hover {
   text-decoration: none;
 }
 
@@ -398,8 +396,7 @@ tbody tr.selected {
   color: #9b2c2c;
 }
 
-.empty,
-.empty-panel {
+.empty {
   color: var(--muted);
 }
 

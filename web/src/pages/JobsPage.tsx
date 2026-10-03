@@ -4,16 +4,18 @@ import { fetchJobs } from "../api";
 import {
   JOB_FILTER_DEFAULTS,
   JOB_FILTER_PARAMS,
+  JOB_FILTERS,
+  JOB_SORT_OPTIONS,
   type JobFilterKey,
 } from "../jobFilters";
-import { JobFilters } from "../components/jobs/JobFilters";
 import { JobsList } from "../components/jobs/JobsList";
+import { FilterBar } from "../components/ui/FilterBar";
 import { pageCountOf, rangeLabel } from "../format";
 import { useListQuery } from "../hooks/useListQuery";
 import { useUrlQuery } from "../hooks/useUrlQuery";
 
 /** Filter values are lists, so both filter kinds share one state shape. */
-export type JobsQueryState = Record<JobFilterKey, string[]> & {
+type JobsQueryState = Record<JobFilterKey, string[]> & {
   sort: string;
   order: string;
   page: number;
@@ -56,7 +58,16 @@ export function JobsPage() {
         <p className="muted">{rangeLabel(query.page, PAGE_SIZE, total, "jobs")}</p>
       </header>
 
-      <JobFilters query={query} onChange={setQuery} />
+      <FilterBar
+        fields={JOB_FILTERS}
+        state={query}
+        onChange={(patch) => setQuery({ ...patch, page: 1 })}
+        onClear={() => setQuery({ ...JOB_FILTER_DEFAULTS, page: 1 })}
+        sort={query.sort}
+        order={query.order}
+        onSort={(sort, order) => setQuery({ sort, order, page: 1 })}
+        sortOptions={JOB_SORT_OPTIONS}
+      />
 
       <JobsList
         state={{ items, loading, error, reload }}
