@@ -16,7 +16,9 @@ function hashIds(jobId: string, candidateId: string): number {
   return sum;
 }
 
-export function parseLlmScore(response: unknown): LlmScore {
+export function parseLlmScore(
+  response: unknown,
+): Pick<LlmScoreWithModel, "score" | "reason"> {
   let parsed = response;
 
   // 1. If response is a string, strip markdown fences and parse JSON
