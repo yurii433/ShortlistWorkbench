@@ -1,11 +1,9 @@
 import { pageOffset, sqlDirection } from "../../http/list-query.js";
-import { FilterBuilder } from "../../db/filter-builder.js";
 import type { Queryable } from "../../db/queryable.js";
 import { toIsoDate } from "../../db/row-utils.js";
 import type { JobWithCounts } from "../../types.js";
 import type { JobListQuery, JobSortField } from "./job.types.js";
 
-/** The only place a user-supplied sort key turns into a SQL expression. */
 const JOB_SORT_SQL: Record<JobSortField, string> = {
   created_at: "j.created_at",
   title: "j.title",
@@ -64,14 +62,25 @@ export type JobRepository = {
 export function createJobRepository(db: Queryable): JobRepository {
   return {
     async list(query) {
-      const filters = new FilterBuilder();
-      filters
-        .eq("j.country", query.country)
-        .eq("j.job_family", query.jobFamily)
-        .containsAny(["j.title", "j.city"], query.search ? `%${query.search}%` : "");
+      const whereClauses: string[] = [];
+      const values: unknown[] = [];
 
-      const where = filters.where();
-      const values = filters.params();
+      if (query.country) {
+        values.push(query.country);
+        whereClauses.push(`j.country = $${values.length}`);
+      }
+
+      if (query.jobFamily) {
+        values.push(query.jobFamily);
+        whereClauses.push(`j.job_family = $${values.length}`);
+      }
+
+      if (query.search) {
+        values.push(`%${query.search}%`);
+        whereClauses.push(`(j.title ILIKE $${values.length} OR j.city ILIKE $${values.length})`);
+      }
+
+      const where = whereClauses.length ? `WHERE ${whereClauses.join(" AND ")}` : "";
       const direction = sqlDirection(query.order);
 
       const countSql = `SELECT COUNT(DISTINCT j.job_id)::int AS total ${FROM_JOBS} ${where}`;
@@ -86,11 +95,7 @@ export function createJobRepository(db: Queryable): JobRepository {
 
       const [countResult, listResult] = await Promise.all([
         db.query(countSql, values),
-        db.query(listSql, [
-          ...values,
-          query.pageSize,
-          pageOffset(query),
-        ]),
+        db.query(listSql, [...values, query.pageSize, pageOffset(query)]),
       ]);
 
       return {

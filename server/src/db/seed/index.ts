@@ -19,6 +19,7 @@ function readCsv(file: string): Record<string, string>[] {
   }) as Record<string, string>[];
 }
 
+// apply to timestamps fields that can crash DB if they are empty strings, e.g. "2023-01-01 00:00:00" is valid but "" is not.
 function emptyToNull(value: string): string | null {
   return value === "" ? null : value;
 }
@@ -40,7 +41,7 @@ export async function seedFromCsv(client: PoolClient): Promise<void> {
         row.seniority,
         row.country,
         row.city,
-        row.created_at,
+        emptyToNull(row.created_at),
       ],
     );
   }

@@ -1,5 +1,4 @@
 import type { Queryable } from "../../db/queryable.js";
-import { FilterBuilder } from "../../db/filter-builder.js";
 import {
   toIsoDate,
   toIsoDateOrNull,
@@ -12,16 +11,12 @@ import type {
   ApplicationSortField,
 } from "./application.types.js";
 
-/**
- * The only place a user-supplied sort key turns into a SQL expression.
- */
 const APPLICATION_SORT_SQL: Record<ApplicationSortField, string> = {
   match_score: "a.match_score",
   created_at: "a.created_at",
   score_disagreement: "ABS(a.llm_score - (a.match_score * 100))",
 };
 
-/** The query fields that are filter lists, i.e. every field but sort and paging. */
 type ApplicationFilterKey = {
   [Key in keyof ApplicationListQuery]-?: ApplicationListQuery[Key] extends
     | string[]
@@ -30,12 +25,6 @@ type ApplicationFilterKey = {
     : never;
 }[keyof ApplicationListQuery];
 
-/**
- * The same allowlist idea for filter keys: each one maps to a fixed column, so
- * the loop below can never interpolate anything the caller sent. Candidate
- * filters are prefixed with `c.` and job filters with `j.` on purpose — the
- * workbench page filters candidates for a job it already knows.
- */
 const APPLICATION_FILTER_COLUMNS = {
   status: "a.status",
   source: "a.source",
@@ -85,7 +74,6 @@ const APPLICATION_COLUMNS = `
   ) AS sibling_application_ids
 `;
 
-/** One join, so a list row never costs an extra query for its candidate. */
 const FROM_APPLICATIONS = `
   FROM applications a
   JOIN jobs j ON j.job_id = a.job_id
@@ -156,21 +144,28 @@ export function createApplicationRepository(
 ): ApplicationRepository {
   return {
     async list(query) {
-      const filters = new FilterBuilder();
+      const whereClauses: string[] = [];
+      const values: unknown[] = [];
 
       for (const [key, column] of Object.entries(APPLICATION_FILTER_COLUMNS)) {
-        filters.in(column, query[key as ApplicationFilterKey]);
+        const filterValue = query[key as ApplicationFilterKey];
+        if (filterValue && Array.isArray(filterValue) && filterValue.length > 0) {
+          const placeholders = filterValue.map((_, i) => `$${values.length + i + 1}`).join(", ");
+          whereClauses.push(`${column} IN (${placeholders})`);
+          values.push(...filterValue);
+        }
       }
-      filters.atLeast("c.years_experience", query.minExperience);
 
-      // Sorting by the gap between the two scores only makes sense for rows
-      // that have been scored, so the sort silently restricts the list.
+      if (query.minExperience !== undefined) {
+        values.push(query.minExperience);
+        whereClauses.push(`c.years_experience >= $${values.length}`);
+      }
+
       if (query.sort === "score_disagreement") {
-        filters.isNotNull("a.llm_score");
+        whereClauses.push("a.llm_score IS NOT NULL");
       }
 
-      const where = filters.where();
-      const values = filters.params();
+      const where = whereClauses.length ? `WHERE ${whereClauses.join(" AND ")}` : "";
       const direction = sqlDirection(query.order);
 
       const countSql = `
@@ -188,11 +183,7 @@ export function createApplicationRepository(
 
       const [countResult, listResult] = await Promise.all([
         db.query(countSql, values),
-        db.query(listSql, [
-          ...values,
-          query.pageSize,
-          pageOffset(query),
-        ]),
+        db.query(listSql, [...values, query.pageSize, pageOffset(query)]),
       ]);
 
       return {
