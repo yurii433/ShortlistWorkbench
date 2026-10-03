@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchApplication, patchStatus, requestLlmScore } from "../../api";
 import type { Application, Status } from "../../domain";
-import { MATCH_BAND_LABELS, STATUSES, STATUS_LABELS } from "../../domain";
+import {
+  MATCH_BAND_LABELS,
+  STATUSES,
+  STATUS_LABELS,
+  SOURCE_LABELS,
+} from "../../domain";
 import { toDateTime, toPercent } from "../../format";
 import { ErrorState } from "../ui/ErrorState";
 import { StatusBadge } from "../ui/StatusBadge";
@@ -91,7 +96,9 @@ export function ApplicationDetail({
       setDetail(updated);
       onRowChange(updated);
     } catch {
-      setLlmError("LLM score is unavailable. The rest of this page still works.");
+      setLlmError(
+        "LLM score is unavailable. The rest of this page still works.",
+      );
     } finally {
       setLlmBusy(false);
     }
@@ -147,24 +154,9 @@ export function ApplicationDetail({
           <CloseButton onClose={onClose} />
         </div>
       </header>
-
       <section>
-        <h3>Job</h3>
-        <p className="job-title">{detail.job.title}</p>
         <dl className="facts">
-          <Fact label="Family" value={detail.job.job_family} />
-          <Fact label="Seniority" value={detail.job.seniority} />
-          <Fact
-            label="Location"
-            value={`${detail.job.city}, ${detail.job.country}`}
-          />
-        </dl>
-      </section>
-
-      <section>
-        <h3>Candidate</h3>
-        <dl className="facts">
-          <Fact label="Source" value={detail.source} />
+          <Fact label="Source" value={SOURCE_LABELS[detail.source]} />
           <Fact
             label="Match band"
             value={MATCH_BAND_LABELS[detail.match_band]}
@@ -204,7 +196,11 @@ export function ApplicationDetail({
           ) : (
             <>
               <p className="muted">Not scored yet. On demand only.</p>
-              <button type="button" onClick={() => void onScore()} disabled={llmBusy}>
+              <button
+                type="button"
+                onClick={() => void onScore()}
+                disabled={llmBusy}
+              >
                 {llmBusy ? "Scoring…" : "Get LLM score"}
               </button>
               {llmError ? <p className="error">{llmError}</p> : null}

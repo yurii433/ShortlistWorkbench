@@ -127,7 +127,7 @@ export type JobWithCounts = Job & {
 export type Application = {
   application_id: string;
   created_at: string;
-  source: string;
+  source: Source;
   match_score: number;
   match_band: MatchBand;
   status: Status;
