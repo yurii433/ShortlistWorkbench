@@ -38,27 +38,26 @@ export function FilterBar<S extends object>({
     const value = state[key as keyof S];
     return total + (Array.isArray(value) ? value.length : 0);
   }, 0);
+  const sortSelect =
+    sort !== undefined && order !== undefined && onSort && sortOptions ? (
+      <SortSelect
+        label="Sort"
+        value={sort}
+        order={order}
+        options={sortOptions}
+        onChange={onSort}
+      />
+    ) : null;
 
   return (
     <div className="filter-bar">
-      <div className="filter-bar-head">
-        {activeCount > 0 ? (
+      {activeCount > 0 ? (
+        <div className="filter-bar-head">
           <button type="button" className="link-button" onClick={onClear}>
             Clear all
           </button>
-        ) : null}
-        {sort !== undefined &&
-        order !== undefined &&
-        onSort &&
-        sortOptions ? (
-          <SortSelect
-            value={sort}
-            order={order}
-            options={sortOptions}
-            onChange={onSort}
-          />
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       <div className="filter-grid">
         {entries.map(([key, field]) => (
@@ -71,6 +70,7 @@ export function FilterBar<S extends object>({
             onChange={(next) => onChange({ [key]: next } as Partial<S>)}
           />
         ))}
+        {sortSelect}
       </div>
     </div>
   );

@@ -139,6 +139,10 @@ h3 {
   margin-left: auto;
 }
 
+.filter-grid .sort-field {
+  margin-left: 0;
+}
+
 select,
 textarea {
   border: 1px solid var(--line);
