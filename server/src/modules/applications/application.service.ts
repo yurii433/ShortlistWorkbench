@@ -66,7 +66,9 @@ export function createApplicationService(
       let scored: LlmScoreWithModel;
       try {
         scored = await scoreCandidate(application.job, application.candidate);
-      } catch {
+      } catch (error) {
+        // The client sees a 502 and no score; log the error so we can investigate.
+        console.warn(`llm_score failed for application ${id}`, error);
         throw new BadGatewayError("llm_unavailable");
       }
 

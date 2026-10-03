@@ -62,11 +62,6 @@ export type Application = {
   candidate: Candidate;
 };
 
-export type LlmScore = {
-  score: number;
-  reason: string;
-};
-
 export type LlmScoreWithModel = {
   score: number;
   reason: string;

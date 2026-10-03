@@ -2,23 +2,36 @@ import { OpenRouter } from "@openrouter/sdk";
 
 import { config } from "../../config.js";
 import type { Candidate, Job, LlmScoreWithModel } from "../../types.js";
-import { systemPrompt } from "./prompt.js";
+import { parseLlmScore, scoreWithMock } from "./llm.service.js";
 import {
-  parseLlmScore,
-  scoreWithMock,
   buildUserContent,
-} from "./llm.service.js";
+  MATCH_SCORE_JSON_SCHEMA,
+  systemPrompt,
+} from "./prompt.js";
 
-async function scoreWithLLM(userContent: any): Promise<LlmScoreWithModel> {
+const MODEL = "openrouter/auto";
+
+async function scoreWithLiveLlm(
+  userContent: string,
+): Promise<LlmScoreWithModel> {
   const client = new OpenRouter({ apiKey: config.openRouterApiKey });
 
   const completion = await client.chat.send({
     chatRequest: {
-      model: "openrouter/auto",
+      model: MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
       ],
+      responseFormat: {
+        type: "json_schema",
+        jsonSchema: {
+          name: "match_score",
+          description: "A 0-100 match score and a one-sentence reason.",
+          schema: MATCH_SCORE_JSON_SCHEMA,
+          strict: true,
+        },
+      },
     },
   });
 
@@ -26,13 +39,14 @@ async function scoreWithLLM(userContent: any): Promise<LlmScoreWithModel> {
     throw new Error("Expected a non-streaming response");
   }
 
-  if (!completion.choices[0].message.content) {
-    throw new Error("Non expected LLM response: no content to parse");
+  const content = completion.choices[0]?.message.content;
+  if (!content) {
+    throw new Error("Unexpected LLM response: no content to parse");
   }
 
   return {
-    ...parseLlmScore(completion.choices[0].message.content),
-    model: completion.model || "openrouter/auto",
+    ...parseLlmScore(content),
+    model: completion.model || MODEL,
   };
 }
 
@@ -42,9 +56,9 @@ export async function scoreCandidate(
 ): Promise<LlmScoreWithModel> {
   if (config.llmMode === "live") {
     if (!config.openRouterApiKey) {
-      throw new Error("LLM_MODE=live requires API_KEY");
+      throw new Error("LLM_MODE=live requires OPENROUTER_API_KEY");
     }
-    return scoreWithLLM(buildUserContent(job, candidate));
+    return scoreWithLiveLlm(buildUserContent(job, candidate));
   }
   return scoreWithMock(job, candidate);
 }

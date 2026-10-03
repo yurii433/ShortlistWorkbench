@@ -1,14 +1,18 @@
-import { config } from "../../config.js";
 import type { Candidate, Job, LlmScoreWithModel } from "../../types.js";
+
 export const LLM_SCORE_MIN = 0;
 export const LLM_SCORE_MAX = 100;
 
+/**
+ * Defence in depth behind `response_format: json_schema`: a provider can still
+ * answer with a fenced code block or an out-of-range number, and the API must
+ * never store a score it did not check.
+ */
 export function parseLlmScore(
   response: unknown,
 ): Pick<LlmScoreWithModel, "score" | "reason"> {
   let parsed = response;
 
-  // 1. If response is a string, strip markdown fences and parse JSON
   if (typeof response === "string") {
     try {
       const cleanJson = response.replace(/```json\n?|\n?```/g, "").trim();
@@ -18,14 +22,12 @@ export function parseLlmScore(
     }
   }
 
-  // 2. Ensure input is an object
   if (!parsed || typeof parsed !== "object") {
     throw new Error("LLM score is not an object");
   }
 
   const { score, reason } = parsed as { score?: unknown; reason?: unknown };
 
-  // 3. Validate score field
   if (
     typeof score !== "number" ||
     !Number.isInteger(score) ||
@@ -37,38 +39,34 @@ export function parseLlmScore(
     );
   }
 
-  // 4. Validate reason field (optional or required based on your type definition)
-  if (typeof reason !== "string") {
-    throw new Error("LLM score object missing string 'reason' field");
+  if (typeof reason !== "string" || reason.trim() === "") {
+    throw new Error("LLM score object missing non-empty string 'reason' field");
   }
 
-  return { score, reason };
+  return { score, reason: reason.trim() };
+}
+
+/**
+ * Generates a deterministic mock score for a job-candidate pair when no API key is set.
+ */
+function stubScoreFor(jobId: string, candidateId: string): number {
+  const str = `${jobId}:${candidateId}`;
+  const hash = str
+    .split("")
+    .reduce((h, c) => (Math.imul(31, h) + c.charCodeAt(0)) | 0, 0);
+  const range = LLM_SCORE_MAX - LLM_SCORE_MIN + 1;
+
+  return LLM_SCORE_MIN + (Math.abs(hash) % range);
 }
 
 export async function scoreWithMock(
   job: Job,
   candidate: Candidate,
 ): Promise<LlmScoreWithModel> {
-  const score = Math.floor(Math.random() * 100) + 1;
+  const score = stubScoreFor(job.job_id, candidate.candidate_id);
   return {
     score,
-    reason: `Mock evaluation: ${score}/100 for ${candidate.full_name} on ${job.title} in ${job.city}.`,
+    reason: `Mock evaluation: ${score}/${LLM_SCORE_MAX} for ${candidate.full_name} on ${job.title} in ${job.city}.`,
     model: "mock",
   };
-}
-
-export function buildUserContent(job: Job, candidate: Candidate): string {
-  return `
-      ### Job
-      ID: ${job.job_id}
-      Title: ${job.title}
-      Family: ${job.job_family}
-      Seniority: ${job.seniority}
-      Location: ${job.city}, ${job.country}
-
-      ### Candidate
-      ID: ${candidate.candidate_id}
-      Preferred Family: ${candidate.preferred_job_family}
-      Years Experience: ${candidate.years_experience}
-      Location: ${candidate.city}, ${candidate.country}`;
 }
