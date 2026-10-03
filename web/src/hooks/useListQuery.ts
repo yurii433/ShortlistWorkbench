@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import type React from "react";
 import type { ListResponse } from "../api";
 
-/** The subset a list view needs; `setItems` stays with the page that mutates rows. */
-export type ListView<T> = Pick<
-  ListState<T>,
-  "items" | "loading" | "error" | "reload"
->;
+/**
+ * State shape for a list view.
+ * Use `ListView<T>` when you only need to READ the list state (items, loading, error).
+ * Use `ListState<T>` when you also need to UPDATE the items (setItems).
+ */
+export type ListView<T> = Pick<ListState<T>, "items" | "loading" | "error" | "reload">;
 
 export type ListState<T> = {
   items: T[];
@@ -14,14 +14,23 @@ export type ListState<T> = {
   loading: boolean;
   error: string | null;
   reload: () => void;
-  /** Lets a caller patch a row in place, e.g. after an optimistic update. */
   setItems: React.Dispatch<React.SetStateAction<T[]>>;
 };
 
 /**
- * Fetches a paged list whenever `fetcher` changes, exposing the honest states a
- * list needs: loading, error and items. Late responses from a superseded request
- * are discarded, so rapid filter changes cannot render stale rows.
+ * Hook that fetches a list of items and manages loading/error states.
+ * 
+ * @param fetcher - A function that fetches data from the server. Should return a promise that resolves to { items: T[], total: number }
+ * @param errorMessage - The error message to display if the fetch fails
+ * @returns Object containing items, total count, loading state, error state, reload function, and setItems updater
+ * 
+ * Example usage:
+ * ```ts
+ * const { items, loading, error, reload } = useListQuery(
+ *   () => api.getList({ page: currentPage, pageSize: 10 }),
+ *   "Failed to load list"
+ * );
+ * ```
  */
 export function useListQuery<T>(
   fetcher: () => Promise<ListResponse<T>>,
@@ -31,32 +40,35 @@ export function useListQuery<T>(
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [attempt, setAttempt] = useState(0);
+  const [reloadCounter, setReloadCounter] = useState(0);
 
   useEffect(() => {
-    let current = true;
+    let requestIsValid = true;
+
     setLoading(true);
     setError(null);
 
     fetcher()
-      .then((data) => {
-        if (!current) return;
-        setItems(data.items);
-        setTotal(data.total);
+      .then((result) => {
+        if (!requestIsValid) return;
+        setItems(result.items);
+        setTotal(result.total);
       })
       .catch(() => {
-        if (current) setError(errorMessage);
+        if (requestIsValid) setError(errorMessage);
       })
       .finally(() => {
-        if (current) setLoading(false);
+        if (requestIsValid) setLoading(false);
       });
 
     return () => {
-      current = false;
+      requestIsValid = false;
     };
-  }, [fetcher, errorMessage, attempt]);
+  }, [fetcher, errorMessage, reloadCounter]);
 
-  const reload = useCallback(() => setAttempt((value) => value + 1), []);
+  const reload = useCallback(() => {
+    setReloadCounter((count) => count + 1);
+  }, []);
 
   return { items, total, loading, error, reload, setItems };
 }
