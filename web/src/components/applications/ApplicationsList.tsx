@@ -1,6 +1,6 @@
-import type { Application } from "../../domain";
+import type { Application } from "../../utils/domain";
 import type { ListView } from "../../hooks/useListQuery";
-import { APPLICATION_SORT_OPTIONS } from "../../applicationFilters";
+import { APPLICATION_SORT_OPTIONS } from "./applicationFilters";
 import { ListSection } from "../ui/ListSection";
 import { Pager } from "../ui/Pager";
 import { SortSelect } from "../ui/SortSelect";

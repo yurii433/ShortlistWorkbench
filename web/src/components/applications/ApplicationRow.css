@@ -24,3 +24,7 @@
 .duplicate-links button:hover {
   text-decoration: none;
 }
+
+.nowrap {
+  white-space: nowrap;
+}

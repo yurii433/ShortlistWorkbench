@@ -1,4 +1,4 @@
-import type { SortOption } from "../../filterTypes";
+import type { SortOption } from "./filterTypes";
 
 type Props = {
   /** Shown above the control when the sort sits in a row of labelled fields. */

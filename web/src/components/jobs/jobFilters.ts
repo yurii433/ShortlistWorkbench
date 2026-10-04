@@ -1,5 +1,5 @@
-import { COUNTRIES, JOB_FAMILIES } from "./domain";
-import type { FilterField, SortOption } from "./filterTypes";
+import { COUNTRIES, JOB_FAMILIES } from "../../utils/domain";
+import type { FilterField, SortOption } from "../ui/filterTypes";
 
 /**
  * The jobs list filters. Declared as a key tuple first so `satisfies` rejects a

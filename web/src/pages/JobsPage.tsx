@@ -7,10 +7,10 @@ import {
   JOB_FILTERS,
   JOB_SORT_OPTIONS,
   type JobFilterKey,
-} from "../jobFilters";
+} from "../components/jobs/jobFilters";
 import { JobsList } from "../components/jobs/JobsList";
 import { FilterBar } from "../components/ui/FilterBar";
-import { pageCountOf, rangeLabel } from "../format";
+import { pageCountOf, rangeLabel } from "../utils/format";
 import { useListQuery } from "../hooks/useListQuery";
 import { useUrlQuery } from "../hooks/useUrlQuery";
 

@@ -12,12 +12,12 @@ import {
   APPLICATION_FILTERS,
   minExperienceOf,
   type ApplicationFilterKey,
-} from "../applicationFilters";
-import type { Application, JobWithCounts } from "../domain";
+} from "../components/applications/applicationFilters";
+import type { Application, JobWithCounts } from "../utils/domain";
 import { ApplicationDetail } from "../components/applications/ApplicationDetail";
 import { ApplicationsList } from "../components/applications/ApplicationsList";
 import { FilterBar } from "../components/ui/FilterBar";
-import { pageCountOf, rangeLabel } from "../format";
+import { pageCountOf, rangeLabel } from "../utils/format";
 import { useListQuery } from "../hooks/useListQuery";
 import { useUrlQuery } from "../hooks/useUrlQuery";
 import "./WorkbenchPage.css";

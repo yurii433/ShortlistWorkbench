@@ -1,6 +1,6 @@
-import type { Application } from "../../domain";
-import { SOURCE_LABELS } from "../../domain";
-import { toAge, toDate, toPercent } from "../../format";
+import type { Application } from "../../utils/domain";
+import { SOURCE_LABELS } from "../../utils/domain";
+import { toAge, toDate, toPercent } from "../../utils/format";
 import { StatusBadge } from "../ui/StatusBadge";
 import "./ApplicationRow.css";
 

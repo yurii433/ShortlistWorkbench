@@ -31,6 +31,12 @@ textarea {
   font: inherit;
 }
 
+h1,
+h2,
+h3 {
+  margin: 0.15rem 0;
+}
+
 button {
   background: var(--accent);
   color: white;
@@ -60,6 +66,12 @@ input[type="search"] {
   background: white;
 }
 
+.app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 2rem;
+}
+
 .link-button {
   background: none;
   color: var(--accent);
@@ -74,24 +86,12 @@ input[type="search"] {
   text-decoration: none;
 }
 
-.app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 1.25rem 1.5rem 2rem;
-}
-
 .topbar {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   gap: 1rem;
   margin-bottom: 1rem;
-}
-
-h1,
-h2,
-h3 {
-  margin: 0.15rem 0;
 }
 
 .eyebrow {
@@ -114,20 +114,6 @@ h3 {
   color: #b42318;
   font-size: 0.8rem;
   margin: 0.35rem 0 0;
-}
-
-/** Free text trimmed to two lines, with the full value in the tooltip. */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin: 0.25rem 0;
-}
-
-/** Prevent awkward line breaks in dates. */
-.nowrap {
-  white-space: nowrap;
 }
 
 table {

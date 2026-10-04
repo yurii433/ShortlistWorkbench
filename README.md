@@ -70,4 +70,4 @@ Covers: list filtering (single and combined), sorting, pagination, per-job scopi
 
 ## Left out, and next
 
-Left out: keyboard shortcuts, free-text search over candidate name (job search covers title and city only), dedicated summary endpoint and selection of several candidates on a page for mass actions.
+Left out: tests for frontend code, keyboard shortcuts, free-text search over candidate name (job search covers title and city only), dedicated summary endpoint and selection of several candidates on a page for mass actions.

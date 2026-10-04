@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchApplication, patchStatus, requestLlmScore } from "../../api";
-import type { Application, Status } from "../../domain";
+import type { Application, Status } from "../../utils/domain";
 import {
   MATCH_BAND_LABELS,
   STATUSES,
   STATUS_LABELS,
   SOURCE_LABELS,
-} from "../../domain";
-import { toAge, toDate, toDateTime, toPercent } from "../../format";
+} from "../../utils/domain";
+import { toAge, toDate, toDateTime, toPercent } from "../../utils/format";
 import { ErrorState } from "../ui/ErrorState";
 import { StatusBadge } from "../ui/StatusBadge";
 import "./ApplicationDetail.css";

@@ -1,4 +1,4 @@
-import type { JobWithCounts } from "../../domain";
+import type { JobWithCounts } from "../../utils/domain";
 
 type Props = {
   job: JobWithCounts;

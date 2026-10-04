@@ -1,4 +1,4 @@
-import type { Application, JobWithCounts, Status } from "./domain";
+import type { Application, JobWithCounts, Status } from "./utils/domain";
 
 export type ListResponse<T> = {
   items: T[];
@@ -58,7 +58,9 @@ async function parseJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
     const error = new Error(
-      typeof body.error === "string" ? body.error : `Request failed (${response.status})`,
+      typeof body.error === "string"
+        ? body.error
+        : `Request failed (${response.status})`,
     );
     (error as Error & { status: number }).status = response.status;
     throw error;
@@ -66,7 +68,9 @@ async function parseJson<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export function fetchJobs(params: JobListParams): Promise<ListResponse<JobWithCounts>> {
+export function fetchJobs(
+  params: JobListParams,
+): Promise<ListResponse<JobWithCounts>> {
   return fetch(`/jobs?${toQuery(params)}`).then((res) =>
     parseJson<ListResponse<JobWithCounts>>(res),
   );
@@ -85,7 +89,9 @@ export function fetchApplications(
 }
 
 export function fetchApplication(id: string): Promise<Application> {
-  return fetch(`/applications/${id}`).then((res) => parseJson<Application>(res));
+  return fetch(`/applications/${id}`).then((res) =>
+    parseJson<Application>(res),
+  );
 }
 
 export function patchStatus(
@@ -101,7 +107,7 @@ export function patchStatus(
 }
 
 export function requestLlmScore(id: string): Promise<Application> {
-  return fetch(`/applications/${id}/llm-score`, { method: "POST" }).then((res) =>
-    parseJson<Application>(res),
+  return fetch(`/applications/${id}/llm-score`, { method: "POST" }).then(
+    (res) => parseJson<Application>(res),
   );
 }

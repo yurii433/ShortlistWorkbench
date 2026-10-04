@@ -1,4 +1,4 @@
-import type { FilterField, SortOption } from "../../filterTypes";
+import type { FilterField, SortOption } from "./filterTypes";
 import { FilterGroup } from "./FilterGroup";
 import { FilterSelect } from "./FilterSelect";
 import { FilterTextInput } from "./FilterTextInput";

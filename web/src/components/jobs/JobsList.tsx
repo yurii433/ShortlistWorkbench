@@ -1,4 +1,4 @@
-import type { JobWithCounts } from "../../domain";
+import type { JobWithCounts } from "../../utils/domain";
 import type { ListView } from "../../hooks/useListQuery";
 import { ListSection } from "../ui/ListSection";
 import { Pager } from "../ui/Pager";

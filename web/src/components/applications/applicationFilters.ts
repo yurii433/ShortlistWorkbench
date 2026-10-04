@@ -9,8 +9,8 @@ import {
   SOURCE_LABELS,
   STATUSES,
   STATUS_LABELS,
-} from "./domain";
-import type { FilterField, SortOption } from "./filterTypes";
+} from "../../utils/domain";
+import type { FilterField, SortOption } from "../ui/filterTypes";
 
 /**
  * The candidate filters of the workbench page. Declared as a key tuple first so
