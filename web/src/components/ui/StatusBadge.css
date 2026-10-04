@@ -30,11 +30,11 @@
 /* Applied more than once to the same job. */
 .badge-duplicate {
   background: #f6e2c3;
-  margin-left: 0.4rem;
+  margin-top: 0.2rem;
 }
 
 .badge-score {
-  background: #e8eef7;
+  background: #ebebeb;
 }
 
 .badge-llm {

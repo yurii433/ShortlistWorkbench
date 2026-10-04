@@ -79,8 +79,8 @@ export const APPLICATION_FILTERS = {
 } satisfies ApplicationFilterFields;
 
 export const APPLICATION_SORT_OPTIONS: readonly SortOption[] = [
-  ["match_score:desc", "Match score (high → low)"],
-  ["match_score:asc", "Match score (low → high)"],
+  ["match_score:desc", "Rule score (high → low)"],
+  ["match_score:asc", "Rule score (low → high)"],
   ["created_at:desc", "Newest first"],
   ["created_at:asc", "Oldest first"],
   ["score_disagreement:desc", "LLM vs rule-based gap"],
@@ -115,7 +115,9 @@ export const APPLICATION_FILTER_DEFAULTS: Record<
  * Several experience buckets ticked means "at least the lowest of them", so the
  * whole group collapses into one threshold the API can compare.
  */
-export function minExperienceOf(selected: readonly string[]): number | undefined {
+export function minExperienceOf(
+  selected: readonly string[],
+): number | undefined {
   if (selected.length === 0) return undefined;
   return Math.min(...selected.map(Number));
 }

@@ -16,6 +16,7 @@ type Props = {
   applicationId: string;
   onRowChange: (application: Application) => void;
   onClose: () => void;
+  onSelect: (id: string) => void;
 };
 
 function CloseButton({ onClose }: { onClose: () => void }) {
@@ -44,6 +45,7 @@ export function ApplicationDetail({
   applicationId,
   onRowChange,
   onClose,
+  onSelect,
 }: Props) {
   const [detail, setDetail] = useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
@@ -211,10 +213,26 @@ export function ApplicationDetail({
             value={detail.candidate.preferred_job_family}
           />
           {detail.sibling_application_ids.length > 0 && (
-            <Fact
-              label="Total applications"
-              value={String(detail.sibling_application_ids.length + 1)}
-            />
+            // add here link
+
+            <div className="tiny">
+              also applied as{" "}
+              {detail.sibling_application_ids.map((id, index) => (
+                <span key={id}>
+                  {index > 0 ? ", " : null}
+                  <button
+                    type="button"
+                    className="link-button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onSelect(id);
+                    }}
+                  >
+                    {id}
+                  </button>
+                </span>
+              ))}
+            </div>
           )}
         </dl>
       </section>

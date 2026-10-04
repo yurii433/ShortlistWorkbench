@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  Navigate,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { fetchApplications, fetchJob } from "../api";
 import {
   APPLICATION_FILTER_DEFAULTS,
@@ -179,7 +184,9 @@ export function WorkbenchPage() {
             fields={APPLICATION_FILTERS}
             state={query}
             onChange={(patch) => setQuery({ ...patch, page: 1 })}
-            onClear={() => setQuery({ ...APPLICATION_FILTER_DEFAULTS, page: 1 })}
+            onClear={() =>
+              setQuery({ ...APPLICATION_FILTER_DEFAULTS, page: 1 })
+            }
           />
         </aside>
         <ApplicationsList
@@ -199,6 +206,7 @@ export function WorkbenchPage() {
             applicationId={query.id}
             onRowChange={onRowChange}
             onClose={closeApplication}
+            onSelect={(id) => setQuery({ id })}
           />
         ) : null}
       </div>
