@@ -64,7 +64,6 @@ Covers: list filtering (single and combined), sorting, pagination, per-job scopi
 
 ## Assumptions
 
-- The UI only exposes the candidate-side filters plus the application-side ones because the list is scoped to one job.
 - `status` and `matchBand` are closed sets with CHECK constraints, so an unknown value is a `400`. `source` is free text.
 - No `UNIQUE (job_id, candidate_id)`: the CSV contains real repeat pairs, and they are all kept.
 
