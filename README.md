@@ -19,6 +19,20 @@ npm run dev
 - Postgres on `localhost:5433` (`shortlist`/`shortlist`/`shortlist`)
 - `npm run db:reset` drops the schema, recreates it, and loads `server/csv_data/*.csv` (40 jobs, 400 candidates, 900 applications). It is the one repeatable load from an empty database, and it wipes recruiter notes and cached LLM scores.
 
+## Tests
+
+```bash
+docker compose up -d --wait
+npm test
+```
+
+To run tests, Docker container should be running.
+
+- No frontend test coverage due to short time limits.
+- 34 API tests over a real Postgres.
+
+Covers: list filtering (single and combined), sorting, pagination, per-job scoping, query validation errors (`400` codes), detail joins and `404`s, the status update including note preservation, the LLM score cache (called once), its `502` path, the response validator, and the determinism and range of the mock score. `GET /jobs` filters, search, sort and counts are covered too.
+
 ## Layout
 
 ```
@@ -44,23 +58,17 @@ Filtering, sorting and paging happen in SQL — one `COUNT` plus one `LIMIT/OFFS
 
 `POST /applications/{id}/llm-score` builds a short prompt from the job (family, seniority, location) and the candidate (preferred family, years of experience, location), asks for **structured JSON** via `response_format: json_schema`, and stores `{ score 0–100, reason, model, scored_at }` on the application.
 
-- **Model: OpenRouter `openrouter/auto`.** The assignment says a small cheap model and no real money; `auto` usually routes to a currently free model served by OpenRouter partners, so the demo should costs nothing and survives a model being retired. The routed model name is stored with each score, so a result is traceable to what produced it.
+- **Model: OpenRouter `openrouter/auto`.** The assignment says a small cheap model and no real money; `auto` usually routes to a currently free model served by OpenRouter partners, so the demo should cost nothing and survives a model being retired. The routed model name is stored with each score, so a result is traceable to what produced it.
 - **Interface + flag.** `LLM_MODE=mock` (default) returns a deterministic stub — the score is a hash of `job_id` + `candidate_id`, so the same pair always gives the same number and a demo is reproducible with no api key. `LLM_MODE=live` with `OPENROUTER_API_KEY` calls the model. The key is read in `config.ts` on the server and never shipped to the browser.
-- **Cache.** The LLM / mock score is written to the database and reused;
+- **Cache.** The LLM / mock score is written to the database and reused.
 
 ## UI notes
 
-- The recruiter lands on the job list (`/`), selects job, opens it and works through thecandidate list at `/job/:jobId`.
+- The recruiter lands on the job list (`/`), selects job, opens it and works through the candidate list at `/job/:jobId`.
 - Filters live in left sidebar panel.
 - Candidate details is a right sidebar panel, opens when user clicks on a candidate. A status change is applied optimistically and rolled back on failure.
 - Filters, sort, paging and the open application live in the URL, so a view can be reloaded or shared.
 - Repeat applications are kept, never merged. `sibling_application_ids` carries the same candidate's other applications to that job (newest first), resolved in SQL and not narrowed by active filters, so the "also applied as" link still works from any page.
-
-## Tests
-
-`npm test` — 34 tests over a real Postgres.
-
-Covers: list filtering (single and combined), sorting, pagination, per-job scoping, query validation errors (`400` codes), detail joins and `404`s, the status update including note preservation, the LLM score cache (called once), its `502` path, the response validator, and the determinism and range of the mock score. `GET /jobs` filters, search, sort and counts are covered too.
 
 ## Assumptions
 
