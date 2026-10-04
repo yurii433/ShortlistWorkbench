@@ -18,6 +18,19 @@ type Props = {
   onClose: () => void;
 };
 
+function CloseButton({ onClose }: { onClose: () => void }) {
+  return (
+    <button
+      type="button"
+      className="panel-close"
+      aria-label="Close application details"
+      onClick={onClose}
+    >
+      ×
+    </button>
+  );
+}
+
 function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div>
@@ -36,7 +49,7 @@ export function ApplicationDetail({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Status & Note draft state
+  // Status & Note state
   const [selectedStatus, setSelectedStatus] = useState<Status>("new");
   const [noteDraft, setNoteDraft] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -92,7 +105,6 @@ export function ApplicationDetail({
     setJustSaved(false);
     setIsSaving(true);
 
-    // Optimistic UI update
     applyChange({
       ...detail,
       status: nextStatus,
@@ -139,15 +151,9 @@ export function ApplicationDetail({
   if (loading) {
     return (
       <aside className="panel" aria-label="Application detail">
-        <div className="panel-state-actions">
-          <button
-            type="button"
-            className="panel-close"
-            aria-label="Close"
-            onClick={onClose}
-          >
-            ×
-          </button>
+        <div className="section-header">
+          <span />
+          <CloseButton onClose={onClose} />
         </div>
         <p className="muted">Loading application…</p>
       </aside>
@@ -157,15 +163,9 @@ export function ApplicationDetail({
   if (error) {
     return (
       <aside className="panel" aria-label="Application detail">
-        <div className="panel-state-actions">
-          <button
-            type="button"
-            className="panel-close"
-            aria-label="Close"
-            onClick={onClose}
-          >
-            ×
-          </button>
+        <div className="section-header">
+          <span />
+          <CloseButton onClose={onClose} />
         </div>
         <ErrorState
           message={error}
@@ -180,31 +180,19 @@ export function ApplicationDetail({
   return (
     <aside className="panel" aria-label="Application detail">
       <header className="panel-header">
-        <div className="panel-header-info">
-          <div className="panel-candidate-row">
-            <h2>{detail.candidate.full_name}</h2>
-            <span
-              className="candidate-id"
-              title={`Application ID: ${detail.application_id}`}
-            >
-              #{detail.application_id}
-            </span>
-          </div>
-          <p className="muted panel-subtitle">
+        <div>
+          <h2>
+            {detail.candidate.full_name}{" "}
+            <span className="tiny muted">#{detail.application_id}</span>
+          </h2>
+          <p className="muted tiny">
             {detail.candidate.email} · {detail.candidate.city},{" "}
             {detail.candidate.country}
           </p>
         </div>
         <div className="panel-actions">
           <StatusBadge status={detail.status} />
-          <button
-            type="button"
-            className="panel-close"
-            aria-label="Close application details"
-            onClick={onClose}
-          >
-            ×
-          </button>
+          <CloseButton onClose={onClose} />
         </div>
       </header>
 
@@ -234,7 +222,7 @@ export function ApplicationDetail({
         <div className="score-card">
           <span className="eyebrow">Rule Match</span>
           <p className="score-value">{toPercent(detail.match_score)}%</p>
-          <p className="muted score-meta">
+          <p className="muted tiny">
             {MATCH_BAND_LABELS[detail.match_band]} match
           </p>
         </div>
@@ -244,7 +232,7 @@ export function ApplicationDetail({
             <>
               <p className="score-value">{detail.llm_score}%</p>
               <p
-                className="muted score-meta line-clamp-2"
+                className="muted tiny line-clamp-2"
                 title={detail.llm_reason ?? undefined}
               >
                 {detail.llm_reason || detail.llm_model}
@@ -272,7 +260,7 @@ export function ApplicationDetail({
           <h3>Application status</h3>
           {detail.status_updated_at && (
             <span
-              className="field-meta muted tiny"
+              className="muted tiny"
               title={toDateTime(detail.status_updated_at)}
             >
               Updated {toAge(detail.status_updated_at)}
@@ -322,7 +310,6 @@ export function ApplicationDetail({
           <div className="form-actions">
             <button
               type="button"
-              className="save-btn"
               disabled={!isDirty || isSaving}
               onClick={() => void onSave()}
             >
