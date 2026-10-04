@@ -7,7 +7,7 @@ Internal tool for staffing applications: work through one job's applicants, chan
 Node 20+, Docker, npm.
 
 ```bash
-cp .env.example .env
+cp .env.default .env
 npm install
 docker compose up -d --wait
 npm run db:reset
