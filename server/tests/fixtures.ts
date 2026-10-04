@@ -1,10 +1,8 @@
 import pg from "pg";
+import { config } from "../src/config.js";
 import { applyMigrations } from "../src/db/migrate.js";
 
-/** The Compose Postgres from docker-compose.yml, test database. */
-export const testUrl =
-  process.env.TEST_DATABASE_URL ??
-  "postgres://shortlist:shortlist@localhost:5433/shortlist_test";
+export const testUrl = config.testDatabaseUrl;
 
 export const pool = new pg.Pool({ connectionString: testUrl });
 

@@ -14,7 +14,9 @@ npm run db:reset
 npm run dev
 ```
 
-- UI http://localhost:5173 · API http://localhost:4000 · Postgres on `localhost:5433` (`shortlist`/`shortlist`/`shortlist`)
+- UI http://localhost:5173
+- API http://localhost:4000
+- Postgres on `localhost:5433` (`shortlist`/`shortlist`/`shortlist`)
 - `npm run db:reset` drops the schema, recreates it, and loads `server/csv_data/*.csv` (40 jobs, 400 candidates, 900 applications). It is the one repeatable load from an empty database, and it wipes recruiter notes and cached LLM scores.
 
 ## Layout
@@ -42,36 +44,23 @@ Filtering, sorting and paging happen in SQL — one `COUNT` plus one `LIMIT/OFFS
 
 `POST /applications/{id}/llm-score` builds a short prompt from the job (family, seniority, location) and the candidate (preferred family, years of experience, location), asks for **structured JSON** via `response_format: json_schema`, and stores `{ score 0–100, reason, model, scored_at }` on the application.
 
-- **Model: OpenRouter `openrouter/auto`.** The assignment says a small cheap model and no real money; `auto` routes to a currently free model, so the demo costs nothing and survives a model being retired. The routed model name is stored with each score, so a result is traceable to what produced it.
+- **Model: OpenRouter `openrouter/auto`.** The assignment says a small cheap model and no real money; `auto` usually routes to a currently free model served by OpenRouter partners, so the demo should costs nothing and survives a model being retired. The routed model name is stored with each score, so a result is traceable to what produced it.
 - **Interface + flag.** `LLM_MODE=mock` (default) returns a deterministic stub — the score is a hash of `job_id` + `candidate_id`, so the same pair always gives the same number and a demo is reproducible with no api key. `LLM_MODE=live` with `OPENROUTER_API_KEY` calls the model. The key is read in `config.ts` on the server and never shipped to the browser.
-- **Cache.** The score is written to the application and reused; posting twice, or opening the application again, does not call the model twice.
-
-## API
-
-| Method | Path                          | Notes                                                                                                                                                                                                                                            |
-| ------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| GET    | `/jobs`                       | `country`, `jobFamily`, `search` (title or city), `sort` (`created_at`\|`title`\|`application_count`), `order`, `page`, `pageSize`                                                                                                               |
-| GET    | `/jobs/:id`                   | Job + applicant counts by status                                                                                                                                                                                                                 |
-| GET    | `/applications`               | `jobId`, `status`, `source`, `matchBand`, `country`, `jobFamily` (job side), `candidateCountry`, `candidateCity`, `preferredJobFamily`, `minExperience`, `sort` (`match_score`\|`created_at`\|`score_disagreement`), `order`, `page`, `pageSize` |
-| GET    | `/applications/:id`           | Application + candidate + job                                                                                                                                                                                                                    |
-| PATCH  | `/applications/:id`           | `{ "status": "shortlisted", "note": "optional" }` — unknown status is a `400`                                                                                                                                                                    |
-| POST   | `/applications/:id/llm-score` | Cached after the first success                                                                                                                                                                                                                   |
-
-Every filter except `minExperience` is a repeated parameter (`?status=new&status=hired` means both); ticks inside one group are `IN`, groups are `AND`. An unknown route answers `404 {"error":"not_found"}` like every other error, not an HTML page. List and detail return the same application shape, so the UI renders one type.
+- **Cache.** The LLM / mock score is written to the database and reused;
 
 ## UI notes
 
-- The recruiter lands on the job list (`/`), each row showing applicant counts per status; a job opens its candidate list at `/job/:jobId`.
-- Filters live left sidebar panel.
-- Detail is a right sidebar panel. A status change is applied optimistically and rolled back on failure, so the row keeps its list position.
+- The recruiter lands on the job list (`/`), selects job, opens it and works through thecandidate list at `/job/:jobId`.
+- Filters live in left sidebar panel.
+- Candidate details is a right sidebar panel, opens when user clicks on a candidate. A status change is applied optimistically and rolled back on failure.
 - Filters, sort, paging and the open application live in the URL, so a view can be reloaded or shared.
 - Repeat applications are kept, never merged. `sibling_application_ids` carries the same candidate's other applications to that job (newest first), resolved in SQL and not narrowed by active filters, so the "also applied as" link still works from any page.
 
 ## Tests
 
-`npm test` — 35 tests over a real Postgres.
+`npm test` — 34 tests over a real Postgres.
 
-Covers: list filtering by status, job country and job family (single and combined), sorting, pagination, per-job scoping, query validation errors (`400` codes), detail joins and `404`s, the status update including note preservation, the LLM score cache (called once), its `502` path, the response validator, and the determinism and range of the mock score. `GET /jobs` filters, search, sort and counts are covered too.
+Covers: list filtering (single and combined), sorting, pagination, per-job scoping, query validation errors (`400` codes), detail joins and `404`s, the status update including note preservation, the LLM score cache (called once), its `502` path, the response validator, and the determinism and range of the mock score. `GET /jobs` filters, search, sort and counts are covered too.
 
 ## Assumptions
 
@@ -81,4 +70,4 @@ Covers: list filtering by status, job country and job family (single and combine
 
 ## Left out, and next
 
-Left out: auth, deployment, mobile layout, keyboard shortcuts, Dockerizing the Node processes, free-text search over candidate name (job search covers title and city only), and a dedicated summary endpoint — per-status counts ride along on each job row instead.
+Left out: keyboard shortcuts, free-text search over candidate name (job search covers title and city only), dedicated summary endpoint and selection of several candidates on a page for mass actions.
