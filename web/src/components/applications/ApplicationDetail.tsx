@@ -7,7 +7,7 @@ import {
   STATUS_LABELS,
   SOURCE_LABELS,
 } from "../../domain";
-import { toDateTime, toPercent } from "../../format";
+import { toAge, toDate, toDateTime, toPercent } from "../../format";
 import { ErrorState } from "../ui/ErrorState";
 import { StatusBadge } from "../ui/StatusBadge";
 import "./ApplicationDetail.css";
@@ -17,19 +17,6 @@ type Props = {
   onRowChange: (application: Application) => void;
   onClose: () => void;
 };
-
-function CloseButton({ onClose }: { onClose: () => void }) {
-  return (
-    <button
-      type="button"
-      className="panel-close"
-      aria-label="Close application details"
-      onClick={onClose}
-    >
-      ×
-    </button>
-  );
-}
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
@@ -48,24 +35,29 @@ export function ApplicationDetail({
   const [detail, setDetail] = useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [llmError, setLlmError] = useState<string | null>(null);
-  const [llmBusy, setLlmBusy] = useState(false);
-  const [stagedStatus, setStagedStatus] = useState<Status | null>(null);
+
+  // Status & Note draft state
+  const [selectedStatus, setSelectedStatus] = useState<Status>("new");
   const [noteDraft, setNoteDraft] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
+
+  // LLM scoring state
+  const [llmBusy, setLlmBusy] = useState(false);
+  const [llmError, setLlmError] = useState<string | null>(null);
 
   const loadDetail = useCallback(async (id: string) => {
     setLoading(true);
     setError(null);
     setLlmError(null);
+    setSaveError(null);
+    setJustSaved(false);
     try {
       const loaded = await fetchApplication(id);
       setDetail(loaded);
+      setSelectedStatus(loaded.status);
       setNoteDraft(loaded.recruiter_note ?? "");
-      setStagedStatus(null);
-      setJustSaved(false);
-      setSaveError(null);
     } catch {
       setDetail(null);
       setError("Could not load this application.");
@@ -83,43 +75,51 @@ export function ApplicationDetail({
     onRowChange(next);
   };
 
-  const onStage = (next: Status) => {
-    if (!detail) return;
-    setJustSaved(false);
-    setStagedStatus(next === detail.status ? null : next);
-  };
+  const isDirty =
+    detail != null &&
+    (selectedStatus !== detail.status ||
+      noteDraft.trim() !== (detail.recruiter_note ?? "").trim());
 
-  const onCommit = async () => {
-    if (!detail || stagedStatus === null) return;
+  const onSave = async () => {
+    if (!detail || !isDirty) return;
 
-    const status = stagedStatus;
-    const note = noteDraft.trim();
-    const noteChanged = note !== (detail.recruiter_note ?? "");
     const previous = detail;
+    const nextStatus = selectedStatus;
+    const trimmedNote = noteDraft.trim();
+    const noteChanged = trimmedNote !== (detail.recruiter_note ?? "").trim();
 
     setSaveError(null);
     setJustSaved(false);
-    setStagedStatus(null);
+    setIsSaving(true);
 
     // Optimistic UI update
     applyChange({
       ...detail,
-      status,
-      recruiter_note: noteChanged ? note || null : detail.recruiter_note,
+      status: nextStatus,
+      recruiter_note: noteChanged ? trimmedNote || null : detail.recruiter_note,
+      status_updated_at:
+        nextStatus !== detail.status
+          ? new Date().toISOString()
+          : detail.status_updated_at,
     });
 
     try {
       const updated = await patchStatus(
         detail.application_id,
-        status,
-        noteChanged ? note : undefined,
+        nextStatus,
+        noteChanged ? trimmedNote : undefined,
       );
-      setNoteDraft(updated.recruiter_note ?? "");
       applyChange(updated);
+      setSelectedStatus(updated.status);
+      setNoteDraft(updated.recruiter_note ?? "");
       setJustSaved(true);
     } catch {
       applyChange(previous);
-      setSaveError("Status update failed. The previous value was restored.");
+      setSelectedStatus(previous.status);
+      setNoteDraft(previous.recruiter_note ?? "");
+      setSaveError("Update failed. Previous values restored.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -130,9 +130,7 @@ export function ApplicationDetail({
     try {
       applyChange(await requestLlmScore(detail.application_id));
     } catch {
-      setLlmError(
-        "LLM score is unavailable. The rest of this page still works.",
-      );
+      setLlmError("LLM score unavailable.");
     } finally {
       setLlmBusy(false);
     }
@@ -142,7 +140,14 @@ export function ApplicationDetail({
     return (
       <aside className="panel" aria-label="Application detail">
         <div className="panel-state-actions">
-          <CloseButton onClose={onClose} />
+          <button
+            type="button"
+            className="panel-close"
+            aria-label="Close"
+            onClick={onClose}
+          >
+            ×
+          </button>
         </div>
         <p className="muted">Loading application…</p>
       </aside>
@@ -153,7 +158,14 @@ export function ApplicationDetail({
     return (
       <aside className="panel" aria-label="Application detail">
         <div className="panel-state-actions">
-          <CloseButton onClose={onClose} />
+          <button
+            type="button"
+            className="panel-close"
+            aria-label="Close"
+            onClick={onClose}
+          >
+            ×
+          </button>
         </div>
         <ErrorState
           message={error}
@@ -165,59 +177,53 @@ export function ApplicationDetail({
 
   if (!detail) return null;
 
-  const moveFormClass = [
-    "move-form",
-    justSaved && "move-form--saved",
-    stagedStatus && "move-form--staged",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const getHintMessage = () => {
-    if (justSaved) {
-      return `Saved. Moved to ${STATUS_LABELS[detail.status]}.`;
-    }
-    if (stagedStatus === null) {
-      return "Pick a different status to stage a move.";
-    }
-    return `Moves to ${STATUS_LABELS[stagedStatus]}${
-      noteDraft.trim() ? " and saves the note." : "."
-    }`;
-  };
-
   return (
     <aside className="panel" aria-label="Application detail">
       <header className="panel-header">
-        <div>
-          <p className="eyebrow">{detail.application_id}</p>
-          <h2>{detail.candidate.full_name}</h2>
-          <p className="muted">
+        <div className="panel-header-info">
+          <div className="panel-candidate-row">
+            <h2>{detail.candidate.full_name}</h2>
+            <span
+              className="candidate-id"
+              title={`Application ID: ${detail.application_id}`}
+            >
+              #{detail.application_id}
+            </span>
+          </div>
+          <p className="muted panel-subtitle">
             {detail.candidate.email} · {detail.candidate.city},{" "}
             {detail.candidate.country}
           </p>
         </div>
         <div className="panel-actions">
           <StatusBadge status={detail.status} />
-          <CloseButton onClose={onClose} />
+          <button
+            type="button"
+            className="panel-close"
+            aria-label="Close application details"
+            onClick={onClose}
+          >
+            ×
+          </button>
         </div>
       </header>
 
-      <section>
+      <section className="detail-section">
         <h3>Profile</h3>
         <dl className="facts">
           <Fact label="Source" value={SOURCE_LABELS[detail.source]} />
-          <Fact
-            label="Match band"
-            value={MATCH_BAND_LABELS[detail.match_band]}
-          />
+          <Fact label="Applied" value={toDate(detail.created_at)} />
           <Fact
             label="Experience"
             value={`${detail.candidate.years_experience} years`}
           />
-          <Fact label="Prefers" value={detail.candidate.preferred_job_family} />
+          <Fact
+            label="Preferred role"
+            value={detail.candidate.preferred_job_family}
+          />
           {detail.sibling_application_ids.length > 0 && (
             <Fact
-              label="Applications to this job"
+              label="Total applications"
               value={String(detail.sibling_application_ids.length + 1)}
             />
           )}
@@ -226,49 +232,66 @@ export function ApplicationDetail({
 
       <section className="scores">
         <div className="score-card">
-          <p className="eyebrow">Rule-based</p>
-          <p className="score-value">{toPercent(detail.match_score)}</p>
-          <p className="muted">{detail.match_band} band</p>
+          <span className="eyebrow">Rule Match</span>
+          <p className="score-value">{toPercent(detail.match_score)}%</p>
+          <p className="muted score-meta">
+            {MATCH_BAND_LABELS[detail.match_band]} match
+          </p>
         </div>
         <div className="score-card">
-          <p className="eyebrow">LLM</p>
+          <span className="eyebrow">AI Match</span>
           {detail.llm_score != null ? (
             <>
-              <p className="score-value">{detail.llm_score}</p>
+              <p className="score-value">{detail.llm_score}%</p>
               <p
-                className="muted line-clamp-2"
+                className="muted score-meta line-clamp-2"
                 title={detail.llm_reason ?? undefined}
               >
-                {detail.llm_reason}
+                {detail.llm_reason || detail.llm_model}
               </p>
-              <p className="muted tiny">{detail.llm_model}</p>
             </>
           ) : (
             <>
+              <p className="score-value score-value--empty">—</p>
               <button
                 type="button"
+                className="score-btn"
                 onClick={() => void onScore()}
                 disabled={llmBusy}
               >
-                {llmBusy ? "Scoring…" : "Get LLM score"}
+                {llmBusy ? "Scoring…" : "Run AI score"}
               </button>
-              {llmError && <p className="error">{llmError}</p>}
+              {llmError && <p className="error tiny">{llmError}</p>}
             </>
           )}
         </div>
       </section>
 
-      <section>
-        <h3>Move application</h3>
-        <div className={moveFormClass}>
-          <div className="move-field">
-            <label className="field-label" htmlFor="move-status">
-              New status
+      <section className="detail-section">
+        <div className="section-header">
+          <h3>Application status</h3>
+          {detail.status_updated_at && (
+            <span
+              className="field-meta muted tiny"
+              title={toDateTime(detail.status_updated_at)}
+            >
+              Updated {toAge(detail.status_updated_at)}
+            </span>
+          )}
+        </div>
+
+        <div className="status-form">
+          <div className="field-group">
+            <label className="field-label" htmlFor="app-status">
+              Status
             </label>
             <select
-              id="move-status"
-              value={stagedStatus ?? detail.status}
-              onChange={(e) => onStage(e.target.value as Status)}
+              id="app-status"
+              value={selectedStatus}
+              onChange={(e) => {
+                setSelectedStatus(e.target.value as Status);
+                setJustSaved(false);
+              }}
             >
               {STATUSES.map((status) => (
                 <option key={status} value={status}>
@@ -276,43 +299,41 @@ export function ApplicationDetail({
                 </option>
               ))}
             </select>
-            <p className="muted tiny">
-              {detail.status_updated_at
-                ? `Status changed ${toDateTime(detail.status_updated_at)}`
-                : "Status never changed yet."}
-            </p>
           </div>
 
-          <div className="move-field">
-            <label className="field-label" htmlFor="move-note">
-              Note (optional)
+          <div className="field-group">
+            <label className="field-label" htmlFor="app-note">
+              Recruiter note
             </label>
             <textarea
-              id="move-note"
+              id="app-note"
               rows={2}
               value={noteDraft}
-              placeholder="Add a short note regarding the status change"
-              onChange={(e) => setNoteDraft(e.target.value)}
+              placeholder="Add an optional note…"
+              onChange={(e) => {
+                setNoteDraft(e.target.value);
+                setJustSaved(false);
+              }}
             />
           </div>
 
-          {saveError && <p className="error">{saveError}</p>}
+          {saveError && <p className="error tiny">{saveError}</p>}
 
-          <p
-            className={`move-hint${justSaved ? " move-hint--saved" : ""}`}
-            aria-live="polite"
-          >
-            {getHintMessage()}
-          </p>
-
-          <button
-            type="button"
-            className="move-commit"
-            disabled={stagedStatus === null}
-            onClick={() => void onCommit()}
-          >
-            Change status
-          </button>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="save-btn"
+              disabled={!isDirty || isSaving}
+              onClick={() => void onSave()}
+            >
+              {isSaving ? "Saving…" : "Save changes"}
+            </button>
+            {justSaved && (
+              <span className="save-feedback" aria-live="polite">
+                ✓ Saved
+              </span>
+            )}
+          </div>
         </div>
       </section>
     </aside>
