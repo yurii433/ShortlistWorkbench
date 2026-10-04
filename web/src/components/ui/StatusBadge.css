@@ -1,0 +1,42 @@
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  height: auto;
+  line-height: 1.2rem;
+}
+
+.badge-new {
+  background: #e8eef7;
+}
+
+.badge-in_review {
+  background: #efe6c9;
+}
+
+.badge-shortlisted {
+  background: var(--accent-soft);
+}
+
+.badge-rejected {
+  background: #f3d6d2;
+}
+
+.badge-hired {
+  background: #d9ead3;
+}
+
+/* Applied more than once to the same job. */
+.badge-duplicate {
+  background: #f6e2c3;
+  margin-left: 0.4rem;
+}
+
+.badge-score {
+  background: #e8eef7;
+}
+
+.badge-llm {
+  background: #eee8f7;
+}

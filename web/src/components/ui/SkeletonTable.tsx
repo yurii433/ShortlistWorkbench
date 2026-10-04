@@ -1,3 +1,5 @@
+import "./SkeletonTable.css";
+
 type Props = {
   columns: string[];
   rows?: number;

@@ -3,6 +3,7 @@ import type { ListView } from "../../hooks/useListQuery";
 import { ListSection } from "../ui/ListSection";
 import { Pager } from "../ui/Pager";
 import { JobRow } from "./JobRow";
+import "./JobsList.css";
 
 const COLUMNS = ["Job", "Family", "Location", "Applicants"];
 

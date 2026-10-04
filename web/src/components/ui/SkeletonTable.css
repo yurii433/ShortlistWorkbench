@@ -1,0 +1,10 @@
+.skeleton-row td {
+  height: 2.85rem;
+}
+
+.skeleton-bar {
+  display: block;
+  height: 0.7rem;
+  border-radius: 3px;
+  background: var(--line);
+}

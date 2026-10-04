@@ -15,6 +15,7 @@ import { FilterBar } from "../components/ui/FilterBar";
 import { pageCountOf, rangeLabel } from "../format";
 import { useListQuery } from "../hooks/useListQuery";
 import { useUrlQuery } from "../hooks/useUrlQuery";
+import "./WorkbenchPage.css";
 
 /**
  * One filter list per field, so several ticks inside a group survive a reload

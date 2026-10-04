@@ -1,0 +1,26 @@
+/** Long text stays on one line and stays reachable through its tooltip. */
+.cell-clamp {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.score-cell {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.duplicate-links {
+  color: var(--muted);
+}
+
+.duplicate-links button {
+  color: var(--accent);
+  text-transform: none;
+  text-decoration: underline;
+}
+
+.duplicate-links button:hover {
+  text-decoration: none;
+}

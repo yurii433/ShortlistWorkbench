@@ -3,6 +3,7 @@ import { FilterGroup } from "./FilterGroup";
 import { FilterSelect } from "./FilterSelect";
 import { FilterTextInput } from "./FilterTextInput";
 import { SortSelect } from "./SortSelect";
+import "./FilterBar.css";
 
 type Props<S extends object> = {
   /** Field definitions, keyed the same way as the keys they occupy in `state`. */

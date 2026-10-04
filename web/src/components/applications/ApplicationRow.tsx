@@ -2,6 +2,7 @@ import type { Application } from "../../domain";
 import { MATCH_BAND_LABELS, SOURCE_LABELS } from "../../domain";
 import { toAge, toDate, toPercent } from "../../format";
 import { StatusBadge } from "../ui/StatusBadge";
+import "./ApplicationRow.css";
 
 type Props = {
   item: Application;

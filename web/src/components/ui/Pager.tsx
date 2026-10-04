@@ -1,3 +1,5 @@
+import "./Pager.css";
+
 type Props = {
   page: number;
   pageCount: number;

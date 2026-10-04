@@ -45,6 +45,35 @@ button:disabled {
   cursor: not-allowed;
 }
 
+select,
+textarea {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  background: white;
+}
+
+input[type="search"] {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  background: white;
+}
+
+.link-button {
+  background: none;
+  color: var(--accent);
+  padding: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-decoration: underline;
+}
+
+.link-button:hover {
+  text-decoration: none;
+}
+
 .app {
   max-width: 1280px;
   margin: 0 auto;
@@ -81,152 +110,24 @@ h3 {
   font-size: 0.78rem;
 }
 
-.filter-bar-head {
-  display: flex;
-  align-items: end;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+.error {
+  color: #b42318;
+  font-size: 0.8rem;
+  margin: 0.35rem 0 0;
 }
 
-.filter-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.75rem;
-  align-items: start;
-  margin: 0 0 1rem;
+/** Free text trimmed to two lines, with the full value in the tooltip. */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0.25rem 0;
 }
 
-.filter-group {
-  min-width: 0;
-  margin: 0;
-  padding: 0.35rem 0.6rem 0.6rem;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
-
-.filter-group legend {
-  padding: 0 0.25rem;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-}
-
-.filter-group-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  /* Long lists such as the cities stay inside their box. */
-  max-height: 9.5rem;
-  overflow-y: auto;
-}
-
-.filter-option {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
-}
-
-.filter-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.85rem;
-}
-
-.sort-field {
-  margin-left: auto;
-}
-
-.filter-grid .sort-field {
-  margin-left: 0;
-}
-
-select,
-textarea {
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 0.4rem 0.5rem;
-  background: white;
-}
-
-input[type="search"] {
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 0.4rem 0.5rem;
-  background: white;
-}
-
-.link-button {
-  background: none;
-  color: var(--accent);
-  padding: 0;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  text-decoration: underline;
-}
-
-.link-button:hover {
-  text-decoration: none;
-}
-
-.jobs-pane {
-  min-height: 24rem;
-}
-
-/* The workbench has two or three columns: filters, candidate list, and an optional detail panel. */
-.workbench {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-.workbench--has-detail {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-.sidebar {
-  flex: 0 0 220px;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.list-pane {
-  flex: 1;
-  min-height: 28rem;
-}
-
-.list-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 0.6rem;
-}
-
-.list-toolbar .sort-field {
-  margin-left: 0;
-}
-
-.list-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.skeleton-row td {
-  height: 2.85rem;
-}
-
-.skeleton-bar {
-  display: block;
-  height: 0.7rem;
-  border-radius: 3px;
-  background: var(--line);
+/** Prevent awkward line breaks in dates. */
+.nowrap {
+  white-space: nowrap;
 }
 
 table {
@@ -252,251 +153,4 @@ tbody tr:hover {
 
 tbody tr.selected {
   background: var(--accent-soft);
-}
-
-/*
- * The candidate table carries six columns, so the widths are fixed: without them
- * the browser gives every free-text cell the same room and the two-line rows
- * push the scores off the edge of a narrow pane.
- */
-.candidates-table {
-  table-layout: fixed;
-}
-
-.candidates-table th:nth-child(1) {
-  width: 25%;
-}
-.candidates-table th:nth-child(2) {
-  width: 20%;
-}
-.candidates-table th:nth-child(3) {
-  width: 15%;
-}
-.candidates-table th:nth-child(4) {
-  width: 15%;
-}
-.candidates-table th:nth-child(5) {
-  width: 20%;
-}
-
-/** Long text stays on one line and stays reachable through its tooltip. */
-.cell-clamp {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-/** Prevent awkward line breaks in dates. */
-.nowrap {
-  white-space: nowrap;
-}
-
-.pager {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.85rem;
-}
-
-.panel {
-  flex: 0 0 450px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 1.5rem;
-  min-height: 28rem;
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--line);
-}
-
-.panel-header p.muted {
-  margin: 0.25rem 0 0;
-  font-size: 0.85rem;
-}
-
-.panel-header h2 {
-  margin: 0.25rem 0 0.1rem;
-}
-
-.panel-header + section {
-  margin-top: 0;
-}
-
-.panel-header + section h3 {
-  margin-top: 0;
-}
-
-.panel-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.panel-state-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 0.5rem;
-}
-
-.panel-close {
-  width: 1rem;
-  height: 1rem;
-  place-items: center;
-  padding: 0;
-
-  background: transparent;
-  color: var(--ink);
-  font-size: 1.25rem;
-  line-height: 1;
-}
-
-.job-title {
-  font-weight: 600;
-  margin: 0.25rem 0 0.75rem;
-}
-
-.facts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.6rem 1rem;
-  margin: 0;
-}
-
-.facts dt {
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-
-.facts dd {
-  margin: 0.1rem 0 0;
-}
-
-.scores {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin: 1.5rem 0;
-}
-
-.score-card {
-  background: #f9fafb;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 1rem;
-}
-
-.score-card .eyebrow {
-  margin: 0 0 0.5rem;
-}
-
-.score-value {
-  font-size: 2.5rem;
-  font-weight: 650;
-  margin: 0.2rem 0;
-  color: var(--ink);
-}
-
-.score-card .muted {
-  font-size: 0.75rem;
-}
-
-.badge {
-  display: inline-block;
-  border-radius: 999px;
-  padding: 0.25rem 0.75rem;
-  font-size: 0.75rem;
-  height: auto;
-  line-height: 1.2rem;
-}
-
-.badge-new {
-  background: #e8eef7;
-}
-.badge-in_review {
-  background: #efe6c9;
-}
-.badge-shortlisted {
-  background: var(--accent-soft);
-}
-.badge-rejected {
-  background: #f3d6d2;
-}
-.badge-hired {
-  background: #d9ead3;
-}
-/* Applied more than once to the same job. */
-.badge-duplicate {
-  background: #f6e2c3;
-  margin-left: 0.4rem;
-}
-.badge-duplicate {
-  background: #f6e2c3;
-  margin-left: 0.4rem;
-}
-.duplicate-links {
-  color: var(--muted);
-}
-.duplicate-links button {
-  color: var(--accent);
-  text-transform: none;
-  text-decoration: underline;
-}
-
-.duplicate-links button:hover {
-  text-decoration: none;
-}
-
-.move-hint {
-  font-size: 0.8rem;
-  margin: 0;
-  color: var(--muted);
-}
-
-.move-hint--saved {
-  color: #16a34a;
-  font-weight: 600;
-}
-
-.move-commit {
-  width: 100%;
-  padding: 0.65rem 0.8rem;
-  font-weight: 600;
-}
-
-@media (max-width: 900px) {
-  .filter-grid,
-  .workbench,
-  .scores,
-  .facts {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .sort-field {
-    margin-left: 0;
-  }
-
-  .list-pane,
-  .panel {
-    height: auto;
-    min-height: 24rem;
-  }
-
-  .list-body {
-    max-height: 32rem;
-  }
 }

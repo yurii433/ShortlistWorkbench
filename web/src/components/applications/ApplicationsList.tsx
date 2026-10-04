@@ -5,6 +5,7 @@ import { ListSection } from "../ui/ListSection";
 import { Pager } from "../ui/Pager";
 import { SortSelect } from "../ui/SortSelect";
 import { ApplicationRow } from "./ApplicationRow";
+import "./ApplicationsList.css";
 
 const COLUMNS = ["Candidate", "Profile", "Score", "Status", "Applied"];
 

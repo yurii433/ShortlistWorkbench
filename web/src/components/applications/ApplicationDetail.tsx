@@ -10,6 +10,7 @@ import {
 import { toDateTime, toPercent } from "../../format";
 import { ErrorState } from "../ui/ErrorState";
 import { StatusBadge } from "../ui/StatusBadge";
+import "./ApplicationDetail.css";
 
 type Props = {
   applicationId: string;
@@ -139,7 +140,7 @@ export function ApplicationDetail({
 
   if (loading) {
     return (
-      <aside className="panel">
+      <aside className="panel" aria-label="Application detail">
         <div className="panel-state-actions">
           <CloseButton onClose={onClose} />
         </div>
@@ -150,7 +151,7 @@ export function ApplicationDetail({
 
   if (error) {
     return (
-      <aside className="panel">
+      <aside className="panel" aria-label="Application detail">
         <div className="panel-state-actions">
           <CloseButton onClose={onClose} />
         </div>
@@ -185,14 +186,14 @@ export function ApplicationDetail({
   };
 
   return (
-    <aside className="panel">
+    <aside className="panel" aria-label="Application detail">
       <header className="panel-header">
         <div>
           <p className="eyebrow">{detail.application_id}</p>
           <h2>{detail.candidate.full_name}</h2>
-          <p className="muted">{detail.candidate.email}</p>
           <p className="muted">
-            {detail.candidate.city}, {detail.candidate.country}
+            {detail.candidate.email} · {detail.candidate.city},{" "}
+            {detail.candidate.country}
           </p>
         </div>
         <div className="panel-actions">
@@ -234,12 +235,16 @@ export function ApplicationDetail({
           {detail.llm_score != null ? (
             <>
               <p className="score-value">{detail.llm_score}</p>
-              <p className="muted">{detail.llm_reason}</p>
+              <p
+                className="muted line-clamp-2"
+                title={detail.llm_reason ?? undefined}
+              >
+                {detail.llm_reason}
+              </p>
               <p className="muted tiny">{detail.llm_model}</p>
             </>
           ) : (
             <>
-              <p className="muted">Not scored yet</p>
               <button
                 type="button"
                 onClick={() => void onScore()}
@@ -273,7 +278,7 @@ export function ApplicationDetail({
             </select>
             <p className="muted tiny">
               {detail.status_updated_at
-                ? `Saved status last changed ${toDateTime(detail.status_updated_at)}`
+                ? `Status changed ${toDateTime(detail.status_updated_at)}`
                 : "Status never changed yet."}
             </p>
           </div>
@@ -284,7 +289,7 @@ export function ApplicationDetail({
             </label>
             <textarea
               id="move-note"
-              rows={3}
+              rows={2}
               value={noteDraft}
               placeholder="Add a short note regarding the status change"
               onChange={(e) => setNoteDraft(e.target.value)}

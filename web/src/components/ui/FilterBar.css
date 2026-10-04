@@ -1,0 +1,71 @@
+.filter-bar-head {
+  display: flex;
+  align-items: end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+  margin: 0 0 1rem;
+}
+
+.filter-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0.35rem 0.6rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.filter-group legend {
+  padding: 0 0.25rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.filter-group-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  /* Long lists such as the cities stay inside their box. */
+  max-height: 9.5rem;
+  overflow-y: auto;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.sort-field {
+  margin-left: auto;
+}
+
+.filter-grid .sort-field {
+  margin-left: 0;
+}
+
+@media (max-width: 900px) {
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sort-field {
+    margin-left: 0;
+  }
+}
