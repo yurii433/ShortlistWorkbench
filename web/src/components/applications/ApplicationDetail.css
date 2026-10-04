@@ -92,11 +92,41 @@
   font-weight: 500;
 }
 
-.scores {
+/* Update container from 2-column grid to a single unified box */
+.score-card {
+  display: flex;
+  flex-direction: column;
+  background: #f9fafb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.75rem 0.85rem;
+  margin: 0.75rem 0;
+  gap: 0.6rem;
+}
+
+/* Align Rule Match and AI Match horizontally */
+.score-header {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
-  margin: 0.75rem 0;
+  gap: 1rem;
+}
+
+/* Align score percentage with its badge/model inline */
+.score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+/* Full readable summary style */
+.score-reason {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--ink);
+  margin: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 0.5rem;
 }
 
 .score-card {

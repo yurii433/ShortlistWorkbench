@@ -68,20 +68,19 @@ export function ApplicationRow({ item, selected, onSelect }: Props) {
           <span className="badge badge-score">{match}</span>
           <span className="badge badge-llm">{item.llm_score ?? "-"}</span>
         </div>
-        <div className="tiny muted">{MATCH_BAND_LABELS[item.match_band]} band</div>
+        <div className="tiny muted">
+          {MATCH_BAND_LABELS[item.match_band]} band
+        </div>
       </td>
       <td>
         <StatusBadge status={item.status} />
         {item.status_updated_at ? (
-          <div className="tiny muted">moved {toAge(item.status_updated_at)}</div>
-        ) : (
-          <div className="tiny muted">never moved</div>
-        )}
-        {item.recruiter_note ? (
-          <div className="tiny muted cell-clamp" title={item.recruiter_note}>
-            “{item.recruiter_note}”
+          <div className="tiny muted">
+            updated {toAge(item.status_updated_at)}
           </div>
-        ) : null}
+        ) : (
+          <div className="tiny muted">never updated</div>
+        )}
       </td>
       <td>
         <div className="nowrap">{toDate(item.created_at)}</div>

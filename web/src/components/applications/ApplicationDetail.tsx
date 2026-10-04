@@ -186,8 +186,9 @@ export function ApplicationDetail({
             <span className="tiny muted">#{detail.application_id}</span>
           </h2>
           <p className="muted tiny">
-            {detail.candidate.email} · {detail.candidate.city},{" "}
-            {detail.candidate.country}
+            {detail.candidate.email} ·
+            <br />
+            {detail.candidate.city}, {detail.candidate.country}
           </p>
         </div>
         <div className="panel-actions">
@@ -218,41 +219,58 @@ export function ApplicationDetail({
         </dl>
       </section>
 
-      <section className="scores">
-        <div className="score-card">
-          <span className="eyebrow">Rule Match</span>
-          <p className="score-value">{toPercent(detail.match_score)}%</p>
-          <p className="muted tiny">
-            {MATCH_BAND_LABELS[detail.match_band]} match
+      <section className="score-card">
+        {/* Top Metric Bar */}
+        <div className="score-header">
+          {/* Rule Match */}
+          <div>
+            <span className="eyebrow">Rule Match</span>
+            <div className="score-row">
+              <p className="score-value">{toPercent(detail.match_score)}%</p>
+              <span className="muted tiny">
+                {MATCH_BAND_LABELS[detail.match_band]} match
+              </span>
+            </div>
+          </div>
+
+          {/* AI Match */}
+          <div>
+            <span className="eyebrow">AI Match</span>
+            {detail.llm_score != null ? (
+              <div className="score-row">
+                <p className="score-value">{detail.llm_score}%</p>
+              </div>
+            ) : (
+              <div className="score-row">
+                <p className="score-value score-value--empty">—</p>
+                <button
+                  type="button"
+                  className="score-btn"
+                  onClick={() => void onScore()}
+                  disabled={llmBusy}
+                >
+                  {llmBusy ? "Scoring…" : "Run AI score"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {llmError && <p className="error tiny">{llmError}</p>}
+
+        {/* Full Unclamped AI Reason */}
+        {detail.llm_score != null && detail.llm_reason && (
+          <p className="score-reason">
+            {detail.llm_model && (
+              <span className="muted tiny">
+                🤖 {detail.llm_model.split("/").pop()}:
+              </span>
+            )}
+            <br />
+            {detail.llm_reason}
           </p>
-        </div>
-        <div className="score-card">
-          <span className="eyebrow">AI Match</span>
-          {detail.llm_score != null ? (
-            <>
-              <p className="score-value">{detail.llm_score}%</p>
-              <p
-                className="muted tiny line-clamp-2"
-                title={detail.llm_reason ?? undefined}
-              >
-                {detail.llm_reason || detail.llm_model}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="score-value score-value--empty">—</p>
-              <button
-                type="button"
-                className="score-btn"
-                onClick={() => void onScore()}
-                disabled={llmBusy}
-              >
-                {llmBusy ? "Scoring…" : "Run AI score"}
-              </button>
-              {llmError && <p className="error tiny">{llmError}</p>}
-            </>
-          )}
-        </div>
+        )}
       </section>
 
       <section className="detail-section">
@@ -270,9 +288,6 @@ export function ApplicationDetail({
 
         <div className="status-form">
           <div className="field-group">
-            <label className="field-label" htmlFor="app-status">
-              Status
-            </label>
             <select
               id="app-status"
               value={selectedStatus}
